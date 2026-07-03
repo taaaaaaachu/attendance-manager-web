@@ -2,8 +2,13 @@
   box-sizing: border-box;
 }
 
+html,
 body {
   margin: 0;
+  overflow-x: hidden;
+}
+
+body {
   font-family: system-ui, -apple-system, "Segoe UI", "Hiragino Kaku Gothic ProN", sans-serif;
   background: #f5f6f8;
   color: #1b1f24;

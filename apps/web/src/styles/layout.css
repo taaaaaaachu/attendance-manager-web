@@ -1,19 +1,19 @@
+/* モバイルファースト: タイトル・期間・ボタン列を縦に並べ、それぞれ中央寄せにする。
+   十分な横幅がある場合のみ下の @media (min-width: 820px) で1行3カラムレイアウトに切り替える。
+   中間幅で一部だけ折り返す状態を作らないことで、重心がズレて見える問題を避ける。 */
 .app-header {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 10px 20px;
+  gap: 10px;
   padding: 12px 20px;
   background: #fff;
   border-bottom: 1px solid #e5e7eb;
-  flex-wrap: wrap;
 }
 
 .app-header h1 {
   font-size: 16px;
   margin: 0;
-  white-space: nowrap;
-  flex: 1 1 auto;
   text-align: center;
 }
 
@@ -44,6 +44,28 @@
   font-size: 13px;
 }
 
+@media (min-width: 820px) {
+  .app-header {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .app-header h1 {
+    flex: 1 1 0;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  .app-header .period-nav {
+    flex: 0 0 auto;
+  }
+
+  .app-header .header-actions {
+    flex: 1 1 0;
+    justify-content: flex-end;
+  }
+}
+
 .app-main {
   display: flex;
   flex-direction: column;
@@ -52,6 +74,7 @@
   padding: 20px;
   max-width: 1100px;
   margin: 0 auto;
+  box-sizing: border-box;
 }
 
 .stats-panel {
@@ -85,6 +108,13 @@
   justify-content: center;
   gap: 16px;
   flex-wrap: wrap;
+  min-width: 0;
+  width: 100%;
+}
+
+.calendar-month {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .calendar-month-label {
@@ -101,6 +131,9 @@
   border-radius: 10px;
   padding: 8px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 /* tileContentのクリック検知用オーバーレイをタイル内に閉じ込めるため、位置指定の基準にする */
@@ -247,6 +280,5 @@
 
   .react-calendar {
     width: 100% !important;
-    max-width: 380px;
   }
 }
