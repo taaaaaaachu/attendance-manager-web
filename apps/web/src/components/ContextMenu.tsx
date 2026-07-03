@@ -1,5 +1,5 @@
 import type { AttendanceStatus } from "@attendance/shared";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { STATUS_EMOJI } from "../utils/calendarUtils";
 
 export type ContextMenuAction =
@@ -24,14 +24,43 @@ const STATUS_OPTIONS: { status: AttendanceStatus | "clear"; label: string }[] = 
   { status: "clear", label: "⬜ 未設定にする" },
 ];
 
+const VIEWPORT_MARGIN = 8;
+
 export function ContextMenu({ x, y, isCompanyHoliday, isCompanyWorkingDay, onSelect, onClose }: Props) {
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState({ left: x, top: y });
+
+  // メニューの実際の描画サイズを測ってから、画面外にはみ出さない位置に補正する。
+  // ResizeObserverでフォント読み込み等によるサイズ変化にも追従して再計算する。
+  useEffect(() => {
+    const el = menuRef.current;
+    if (!el) return;
+
+    const adjust = () => {
+      const rect = el.getBoundingClientRect();
+      const left = Math.max(VIEWPORT_MARGIN, Math.min(x, window.innerWidth - rect.width - VIEWPORT_MARGIN));
+      const top = Math.max(VIEWPORT_MARGIN, Math.min(y, window.innerHeight - rect.height - VIEWPORT_MARGIN));
+      setPosition((prev) => (prev.left === left && prev.top === top ? prev : { left, top }));
+    };
+
+    adjust();
+    const observer = new ResizeObserver(adjust);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [x, y]);
+
   useEffect(() => {
     window.addEventListener("click", onClose);
     return () => window.removeEventListener("click", onClose);
   }, [onClose]);
 
   return (
-    <div className="context-menu" style={{ left: x, top: y }} onClick={(e) => e.stopPropagation()}>
+    <div
+      ref={menuRef}
+      className="context-menu"
+      style={{ left: position.left, top: position.top }}
+      onClick={(e) => e.stopPropagation()}
+    >
       {STATUS_OPTIONS.map((option) => (
         <button key={option.status} type="button" onClick={() => onSelect(option.status)}>
           {option.label}
