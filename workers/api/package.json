@@ -1,0 +1,25 @@
+{
+  "name": "@attendance/api",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "db:migrate:local": "wrangler d1 migrations apply attendance-manager-db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply attendance-manager-db --remote"
+  },
+  "dependencies": {
+    "@attendance/shared": "workspace:*",
+    "hono": "^4.6.0"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.8.0",
+    "@cloudflare/workers-types": "^4.20260101.0",
+    "typescript": "~5.8.3",
+    "vitest": "^3.0.0",
+    "wrangler": "^4.0.0"
+  }
+}
