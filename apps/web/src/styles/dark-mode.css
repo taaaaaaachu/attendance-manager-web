@@ -1,0 +1,60 @@
+@media (prefers-color-scheme: dark) {
+  body {
+    background: #0f1115;
+    color: #e5e7eb;
+  }
+
+  .auth-form,
+  .app-header,
+  .stats-panel,
+  .react-calendar,
+  .context-menu,
+  .modal {
+    background: #1a1d23 !important;
+    color: #e5e7eb;
+  }
+
+  .app-header {
+    border-bottom-color: #2a2d34;
+  }
+
+  .auth-form input,
+  .modal input,
+  .modal select {
+    background: #0f1115;
+    color: #e5e7eb;
+    border-color: #3a3d44;
+  }
+
+  .app-header button,
+  .modal-actions button {
+    background: #22252b;
+    color: #e5e7eb;
+    border-color: #3a3d44;
+  }
+
+  .context-menu button:hover {
+    background: #2a2d34;
+  }
+
+  .tile-office {
+    background: #14532d !important;
+    color: #e5e7eb !important;
+  }
+  .tile-remote {
+    background: #1e3a8a !important;
+    color: #e5e7eb !important;
+  }
+  .tile-paidleave {
+    background: #7c2d12 !important;
+    color: #e5e7eb !important;
+  }
+  .tile-holiday {
+    background: #7f1d1d !important;
+    color: #e5e7eb !important;
+  }
+  .tile-disabled {
+    background: #16181d !important;
+    color: #555 !important;
+  }
+}
