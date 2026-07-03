@@ -45,6 +45,16 @@
     color: #e5e7eb;
   }
 
+  /* layout.css/base.cssに残る明モード前提の薄暗いグレー文字(#555/#666)を上書きし、
+     暗い背景でも読める明度にする */
+  .stats-panel dt {
+    color: #9ca3af;
+  }
+
+  .auth-form label {
+    color: #9ca3af;
+  }
+
   .tile-office {
     background: #14532d !important;
     color: #e5e7eb !important;
@@ -63,6 +73,31 @@
   }
   .tile-disabled {
     background: #16181d !important;
-    color: #555 !important;
+    color: #6b7280 !important;
+  }
+
+  /* react-calendarのデフォルトCSS(明モード前提)を上書きする。
+     特に土日の赤文字(#d10000)はtile-holidayの暗い赤背景と重なるとほぼ読めなくなるため必須。 */
+  .react-calendar__month-view__days__day--weekend {
+    color: #fca5a5;
+  }
+
+  .react-calendar__month-view__days__day--neighboringMonth {
+    color: #6b7280;
+  }
+
+  .react-calendar__tile:enabled:hover,
+  .react-calendar__tile:enabled:focus {
+    background-color: #2a2d34;
+  }
+
+  .react-calendar__tile--now {
+    background: #4b3a17;
+    color: #fde68a;
+  }
+
+  .react-calendar__tile--now:enabled:hover,
+  .react-calendar__tile--now:enabled:focus {
+    background: #5b4720;
   }
 }
