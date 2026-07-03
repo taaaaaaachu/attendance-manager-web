@@ -5,6 +5,7 @@ import {
   getBusinessDays,
   getCurrentPeriod,
   getMandatoryOfficeDays,
+  getPeriodForMonthOffset,
   isHoliday,
   resolveClosingDate,
 } from "../src/dateUtils";
@@ -110,6 +111,24 @@ describe("getCurrentPeriod", () => {
   it("年またぎ: 締め日=15, today=1/10 → 期間は前年12/16〜1/15", () => {
     const period = getCurrentPeriod("2026-01-10", 15, "none", EMPTY, EMPTY, EMPTY);
     expect(period).toEqual({ startDate: "2025-12-16", endDate: "2026-01-15" });
+  });
+});
+
+describe("getPeriodForMonthOffset", () => {
+  it("offsetMonths=0は現在の期間と一致する", () => {
+    const withOffset = getPeriodForMonthOffset("2026-02-20", 0, 15, "none", EMPTY, EMPTY, EMPTY);
+    const current = getCurrentPeriod("2026-02-20", 15, "none", EMPTY, EMPTY, EMPTY);
+    expect(withOffset).toEqual(current);
+  });
+
+  it("offsetMonths=1で翌月の期間になる", () => {
+    const period = getPeriodForMonthOffset("2026-02-20", 1, 15, "none", EMPTY, EMPTY, EMPTY);
+    expect(period).toEqual({ startDate: "2026-03-16", endDate: "2026-04-15" });
+  });
+
+  it("offsetMonths=-1で前月の期間になる", () => {
+    const period = getPeriodForMonthOffset("2026-02-20", -1, 15, "none", EMPTY, EMPTY, EMPTY);
+    expect(period).toEqual({ startDate: "2026-01-16", endDate: "2026-02-15" });
   });
 });
 

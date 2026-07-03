@@ -1,6 +1,5 @@
 import { env, SELF } from "cloudflare:test";
 import { beforeAll, describe, expect, it } from "vitest";
-// @ts-expect-error ?raw インポートはビルド時に文字列として解決される(src/sql.d.ts参照)
 import migrationSql from "../migrations/0001_init.sql?raw";
 
 beforeAll(async () => {

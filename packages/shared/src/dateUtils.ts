@@ -1,4 +1,4 @@
-import { addDays, format, getDay, parseISO } from "date-fns";
+import { addDays, addMonths, format, getDay, parseISO } from "date-fns";
 import type { ClosingDayShift, Period } from "./types";
 
 const DATE_FORMAT = "yyyy-MM-dd";
@@ -207,6 +207,35 @@ export function getMandatoryOfficeDays(
   }
 
   return Array.from(result).sort();
+}
+
+/**
+ * offsetMonths分だけ基準日(todayStr)をずらした上で、その月が属する勤怠期間を算出する。
+ * カレンダー画面の「前月/翌月」ナビゲーションに使う。
+ */
+export function getPeriodForMonthOffset(
+  todayStr: string,
+  offsetMonths: number,
+  closingDay: number,
+  closingDayShift: ClosingDayShift,
+  holidays: ReadonlySet<string>,
+  companyHolidays: ReadonlySet<string>,
+  companyWorkingDays: ReadonlySet<string>,
+): Period {
+  const shiftedToday = formatDate(addMonths(parseDate(todayStr), offsetMonths));
+  return getCurrentPeriod(
+    shiftedToday,
+    closingDay,
+    closingDayShift,
+    holidays,
+    companyHolidays,
+    companyWorkingDays,
+  );
+}
+
+/** 指定日の曜日を返す(0=日曜〜6=土曜) */
+export function getWeekday(dateStr: string): number {
+  return getDay(parseDate(dateStr));
 }
 
 /**
