@@ -4,7 +4,6 @@ import App from "./App";
 import "./styles/base.css";
 import "./styles/layout.css";
 import "./styles/modals.css";
-import "./styles/dark-mode.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
