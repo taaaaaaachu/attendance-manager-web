@@ -13,10 +13,7 @@
     {
       "binding": "DB",
       "database_name": "attendance-manager-db",
-      // `wrangler d1 create attendance-manager-db` 実行後に発行されるIDに置き換える。
-      // ローカル開発(`wrangler dev`のデフォルト)ではこの値は使われず、.wrangler/state配下の
-      // ローカルSQLiteが使われるため、リモートD1作成前でも動作確認できる。
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "a78a4869-7adf-456c-9052-fa8cedc5e45b",
       "migrations_dir": "migrations"
     }
   ],
