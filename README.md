@@ -85,8 +85,7 @@ cd workers/api && pnpm test
    npx wrangler d1 create attendance-manager-db
    ```
 
-   出力される `database_id` を `workers/api/wrangler.jsonc` の `d1_databases[0].database_id` に反映する
-   (現在はプレースホルダー `00000000-0000-0000-0000-000000000000` が入っている)。
+   出力される `database_id` を `workers/api/wrangler.jsonc` の `d1_databases[0].database_id` に反映する。
 
 3. リモートDBにマイグレーションを適用:
 
@@ -101,6 +100,31 @@ cd workers/api && pnpm test
    cd ../../workers/api && pnpm deploy
    ```
 
+## PWA(Progressive Web App)
+
+`apps/web` は `vite-plugin-pwa` によりPWA化しており、スマートフォン等のホーム画面に追加して
+アプリのように起動できる。
+
+- **オフライン対応の範囲**: ホーム画面への追加・スタンドアロン起動のみを目的としており、
+  `/api/*` のレスポンス(勤怠データ等)は一切キャッシュしない(常にネットワークから最新データを
+  取得する、`apps/web/pwa.config.ts` の `workbox.runtimeCaching` で `NetworkOnly` を明示)。
+  オフライン時はSPAシェルは表示されるが、データの取得・更新はできない。
+- **自動更新**: 新バージョンをデプロイすると、ユーザー操作なしで自動的に最新版に切り替わる
+  (`registerType: "autoUpdate"` + `main.tsx` での `registerSW({ immediate: true })` の組み合わせ。
+  詳細は `apps/web/pwa.config.ts` のコメント参照)。1時間毎に更新チェックのpollingも行う。
+- **アイコンの再生成**: `apps/web/public/logo.svg` を編集後、以下を実行すると各サイズのPNG/ICOが
+  再生成される(生成物は `apps/web/public/` にコミットする運用、ビルド毎の自動生成はしない)。
+
+  ```bash
+  cd apps/web
+  pnpm generate-pwa-assets
+  ```
+
+- **動作確認**: `pnpm build` 時に `scripts/verify-pwa-build.mjs` が `dist/manifest.webmanifest` /
+  `dist/sw.js` の存在と必須フィールドを自動検証する。実機でのホーム画面追加・スタンドアロン起動・
+  アイコン表示・自動更新の確認は目視で行う必要がある(Chrome DevToolsのApplicationタブでの
+  Manifest/Service Worker登録状態確認も有用)。
+
 ## セキュリティ上の注意・トレードオフ
 
 - パスワードは PBKDF2-HMAC-SHA256 でハッシュ化している。**反復回数は15,000回**に設定しており、
@@ -114,4 +138,5 @@ cd workers/api && pnpm test
 ## 既知の制約・今後の課題
 
 - PNG画像エクスポート(html2canvasを使った期間カレンダーの画像化)は未実装。JSONエクスポートのみ対応。
-- レスポンシブ対応・ダークモードは実装済みだが、実機での見た目の最終確認は未実施。
+- ダークモードは視認性の問題があったため廃止し、端末設定によらず常にライトモードで表示する。
+- PWAの実機でのホーム画面追加・自動更新の最終確認は未実施(上記「PWA」セクション参照)。
