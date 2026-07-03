@@ -36,7 +36,10 @@
   gap: 20px;
   padding: 20px;
   align-items: flex-start;
+  justify-content: center;
   flex-wrap: wrap;
+  max-width: 1100px;
+  margin: 0 auto;
 }
 
 .stats-panel {
@@ -79,6 +82,11 @@
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
 }
 
+/* tileContentのクリック検知用オーバーレイをタイル内に閉じ込めるため、位置指定の基準にする */
+.react-calendar__tile {
+  position: relative;
+}
+
 .tile-office {
   background: #dcfce7 !important;
 }
@@ -119,4 +127,62 @@
 
 .context-menu button:hover {
   background: #f3f4f6;
+}
+
+.context-menu-separator {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 4px 2px;
+}
+
+@media (max-width: 640px) {
+  .app-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .app-header h1 {
+    text-align: center;
+  }
+
+  .app-header .period-nav {
+    justify-content: space-between;
+  }
+
+  .app-header .period-nav span {
+    flex: 1;
+    text-align: center;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  .app-header .header-actions {
+    flex-wrap: wrap;
+  }
+
+  .app-header .header-actions button {
+    flex: 1 1 auto;
+  }
+
+  .app-main {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .stats-panel {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .calendar-panel {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .react-calendar {
+    width: 100% !important;
+    max-width: 380px;
+  }
 }

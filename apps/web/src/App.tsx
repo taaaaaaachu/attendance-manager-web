@@ -126,6 +126,34 @@ export default function App() {
     }
   };
 
+  const toggleCompanyHoliday = async (date: string) => {
+    try {
+      if (companyHolidays.includes(date)) {
+        await removeCompanyHoliday(date);
+      } else {
+        await addCompanyHoliday(date);
+      }
+      setCompanyHolidays(await getCompanyHolidays());
+      await loadPeriodData();
+    } catch (err) {
+      setAlertMessage(err instanceof ApiError ? err.message : "更新に失敗しました");
+    }
+  };
+
+  const toggleCompanyWorkingDay = async (date: string) => {
+    try {
+      if (companyWorkingDays.includes(date)) {
+        await removeCompanyWorkingDay(date);
+      } else {
+        await addCompanyWorkingDay(date);
+      }
+      setCompanyWorkingDays(await getCompanyWorkingDays());
+      await loadPeriodData();
+    } catch (err) {
+      setAlertMessage(err instanceof ApiError ? err.message : "更新に失敗しました");
+    }
+  };
+
   const handleDayClick = (date: string) => {
     if (!period || date < period.startDate || date > period.endDate) return;
     const current = records.get(date)?.status;
@@ -184,8 +212,16 @@ export default function App() {
         <ContextMenu
           x={contextMenu.x}
           y={contextMenu.y}
-          onSelect={(status) => {
-            applyStatus(contextMenu.date, status);
+          isCompanyHoliday={companyHolidays.includes(contextMenu.date)}
+          isCompanyWorkingDay={companyWorkingDays.includes(contextMenu.date)}
+          onSelect={(action) => {
+            if (action === "toggleCompanyHoliday") {
+              toggleCompanyHoliday(contextMenu.date);
+            } else if (action === "toggleCompanyWorkingDay") {
+              toggleCompanyWorkingDay(contextMenu.date);
+            } else {
+              applyStatus(contextMenu.date, action);
+            }
             setContextMenu(null);
           }}
           onClose={() => setContextMenu(null)}

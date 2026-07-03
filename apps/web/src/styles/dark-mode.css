@@ -37,6 +37,10 @@
     background: #2a2d34;
   }
 
+  .context-menu-separator {
+    border-top-color: #3a3d44;
+  }
+
   .tile-office {
     background: #14532d !important;
     color: #e5e7eb !important;
