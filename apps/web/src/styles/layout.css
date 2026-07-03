@@ -175,10 +175,10 @@
   color: #aaa !important;
 }
 
-/* react-calendarは月をまたいだ隣接月の日付をグレー文字(#757575)にするが、
-   編集範囲内の日付まで薄く見えてしまうため、範囲外(tile-disabled)でない限り通常の文字色に戻す */
-.react-calendar__month-view__days__day--neighboringMonth:not(.tile-disabled) {
-  color: #1b1f24 !important;
+/* react-calendarは隣接月の日付を一律グレー文字(#757575)にするため、
+   休日(tile-holiday)であっても黒っぽいグレーになってしまう。編集範囲内であれば薄い赤にする */
+.react-calendar__month-view__days__day--neighboringMonth.tile-holiday:not(.tile-disabled) {
+  color: #f87171 !important;
 }
 
 .tile-today abbr {
