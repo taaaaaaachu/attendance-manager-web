@@ -1,5 +1,6 @@
 import type { AttendanceStatus } from "@attendance/shared";
 import { useEffect } from "react";
+import { STATUS_EMOJI } from "../utils/calendarUtils";
 
 export type ContextMenuAction =
   | AttendanceStatus
@@ -17,10 +18,10 @@ interface Props {
 }
 
 const STATUS_OPTIONS: { status: AttendanceStatus | "clear"; label: string }[] = [
-  { status: "office", label: "出社" },
-  { status: "remote", label: "在宅" },
-  { status: "paidleave", label: "有給" },
-  { status: "clear", label: "未設定にする" },
+  { status: "office", label: `${STATUS_EMOJI.office} 出社` },
+  { status: "remote", label: `${STATUS_EMOJI.remote} 在宅` },
+  { status: "paidleave", label: `${STATUS_EMOJI.paidleave} 有給` },
+  { status: "clear", label: "⬜ 未設定にする" },
 ];
 
 export function ContextMenu({ x, y, isCompanyHoliday, isCompanyWorkingDay, onSelect, onClose }: Props) {

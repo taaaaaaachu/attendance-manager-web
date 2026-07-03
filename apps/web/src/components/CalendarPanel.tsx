@@ -2,7 +2,7 @@ import type { AttendanceRecord, Period } from "@attendance/shared";
 import { formatDate, parseDate } from "@attendance/shared";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
-import { getTileClassName } from "../utils/calendarUtils";
+import { getTileClassName, STATUS_EMOJI } from "../utils/calendarUtils";
 
 interface Props {
   period: Period;
@@ -54,20 +54,24 @@ export function CalendarPanel({
             }
             tileContent={({ date }) => {
               const dateStr = formatDate(date);
+              const status = records.get(dateStr)?.status;
               return (
-                <div
-                  className="tile-interaction-layer"
-                  style={{ position: "absolute", inset: 0, cursor: "pointer" }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDayClick(dateStr);
-                  }}
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onDayContextMenu(dateStr, e.clientX, e.clientY);
-                  }}
-                />
+                <>
+                  {status && <span className="tile-status-emoji">{STATUS_EMOJI[status]}</span>}
+                  <div
+                    className="tile-interaction-layer"
+                    style={{ position: "absolute", inset: 0, cursor: "pointer" }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDayClick(dateStr);
+                    }}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onDayContextMenu(dateStr, e.clientX, e.clientY);
+                    }}
+                  />
+                </>
               );
             }}
           />

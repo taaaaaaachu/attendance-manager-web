@@ -108,6 +108,13 @@
   position: relative;
 }
 
+.tile-status-emoji {
+  display: block;
+  font-size: 14px;
+  line-height: 1;
+  margin-top: 2px;
+}
+
 .tile-office {
   background: #dcfce7 !important;
 }
@@ -198,6 +205,11 @@
 
   .react-calendar__tile {
     padding: 16px 6px !important;
+  }
+
+  .tile-status-emoji {
+    font-size: 18px;
+    margin-top: 4px;
   }
 }
 

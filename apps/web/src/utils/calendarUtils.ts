@@ -1,5 +1,11 @@
-import type { AttendanceRecord } from "@attendance/shared";
+import type { AttendanceRecord, AttendanceStatus } from "@attendance/shared";
 import { formatDate, isHoliday } from "@attendance/shared";
+
+export const STATUS_EMOJI: Record<AttendanceStatus, string> = {
+  office: "🏢",
+  remote: "🏠",
+  paidleave: "🌴",
+};
 
 export function getTileClassName(params: {
   date: Date;
