@@ -174,9 +174,11 @@
   background: #f3f4f6 !important;
   color: #aaa !important;
 }
-.tile-disabled.tile-holiday {
-  background: #f8dede !important;
-  color: #c98a8a !important;
+
+/* react-calendarは月をまたいだ隣接月の日付をグレー文字(#757575)にするが、
+   編集範囲内の日付まで薄く見えてしまうため、範囲外(tile-disabled)でない限り通常の文字色に戻す */
+.react-calendar__month-view__days__day--neighboringMonth:not(.tile-disabled) {
+  color: #1b1f24 !important;
 }
 
 .tile-today abbr {

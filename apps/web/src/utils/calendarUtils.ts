@@ -21,11 +21,9 @@ export function getTileClassName(params: {
 }): string {
   const dateStr = formatDate(params.date);
   const todayClass = isTodayDate(dateStr) ? " tile-today" : "";
-  const isHolidayDate = isHoliday(dateStr, params.holidays, params.companyHolidays, params.companyWorkingDays);
 
   if (dateStr < params.period.startDate || dateStr > params.period.endDate) {
-    const holidayClass = isHolidayDate ? " tile-holiday" : "";
-    return `tile-disabled${holidayClass}${todayClass}`;
+    return `tile-disabled${todayClass}`;
   }
 
   const record = params.records.get(dateStr);
@@ -33,7 +31,7 @@ export function getTileClassName(params: {
   if (record?.status === "remote") return `tile-remote${todayClass}`;
   if (record?.status === "paidleave") return `tile-paidleave${todayClass}`;
 
-  if (isHolidayDate) {
+  if (isHoliday(dateStr, params.holidays, params.companyHolidays, params.companyWorkingDays)) {
     return `tile-holiday${todayClass}`;
   }
   return todayClass.trim();
