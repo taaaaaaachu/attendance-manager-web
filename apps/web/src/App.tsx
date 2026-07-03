@@ -194,7 +194,7 @@ export default function App() {
       />
 
       <main className="app-main">
-        <StatsPanel stats={stats} targetOfficeRate={settings?.targetOfficeRate ?? 50} />
+        <StatsPanel stats={stats} />
         {period && (
           <CalendarPanel
             period={period}

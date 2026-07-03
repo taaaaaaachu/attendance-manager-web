@@ -41,6 +41,10 @@
     border-top-color: #3a3d44;
   }
 
+  .calendar-month-label {
+    color: #e5e7eb;
+  }
+
   .tile-office {
     background: #14532d !important;
     color: #e5e7eb !important;

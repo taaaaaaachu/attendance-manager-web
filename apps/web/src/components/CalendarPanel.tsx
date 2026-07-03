@@ -39,34 +39,39 @@ export function CalendarPanel({
   return (
     <div className="calendar-panel">
       {months.map((month) => (
-        <Calendar
-          key={month.toISOString()}
-          activeStartDate={month}
-          value={null}
-          showNavigation={false}
-          locale="ja-JP"
-          tileClassName={({ date }) =>
-            getTileClassName({ date, period, records, holidays, companyHolidays, companyWorkingDays })
-          }
-          tileContent={({ date }) => {
-            const dateStr = formatDate(date);
-            return (
-              <div
-                className="tile-interaction-layer"
-                style={{ position: "absolute", inset: 0, cursor: "pointer" }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDayClick(dateStr);
-                }}
-                onContextMenu={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  onDayContextMenu(dateStr, e.clientX, e.clientY);
-                }}
-              />
-            );
-          }}
-        />
+        <div key={month.toISOString()} className="calendar-month">
+          <div className="calendar-month-label">
+            {month.getFullYear()}年{month.getMonth() + 1}月
+          </div>
+          <Calendar
+            activeStartDate={month}
+            value={null}
+            showNavigation={false}
+            locale="ja-JP"
+            calendarType="gregory"
+            tileClassName={({ date }) =>
+              getTileClassName({ date, period, records, holidays, companyHolidays, companyWorkingDays })
+            }
+            tileContent={({ date }) => {
+              const dateStr = formatDate(date);
+              return (
+                <div
+                  className="tile-interaction-layer"
+                  style={{ position: "absolute", inset: 0, cursor: "pointer" }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDayClick(dateStr);
+                  }}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onDayContextMenu(dateStr, e.clientX, e.clientY);
+                  }}
+                />
+              );
+            }}
+          />
+        </div>
       ))}
     </div>
   );
