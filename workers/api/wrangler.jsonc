@@ -3,6 +3,7 @@
   "name": "attendance-manager-api",
   "main": "src/index.ts",
   "compatibility_date": "2026-07-01",
+  "routes": [{ "pattern": "attendance-manager.example.com", "custom_domain": true }],
   "assets": {
     "directory": "../../apps/web/dist",
     "binding": "ASSETS",
