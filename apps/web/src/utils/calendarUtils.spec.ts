@@ -1,6 +1,6 @@
 import type { AttendanceRecord } from "@attendance/shared";
-import { describe, expect, it } from "vitest";
-import { getTileClassName } from "./calendarUtils";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { getTileClassName, isTodayDate } from "./calendarUtils";
 
 const EMPTY = new Set<string>();
 const PERIOD = { startDate: "2026-06-16", endDate: "2026-07-15" };
@@ -96,5 +96,62 @@ describe("getTileClassName", () => {
       companyWorkingDays: EMPTY,
     });
     expect(result).toBe("tile-office");
+  });
+
+  describe("今日の日付にtile-todayが付与される", () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date(2026, 5, 16)); // 2026-06-16を「今日」に固定
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("ステータス未設定の平日が今日の場合はtile-todayのみ", () => {
+      const result = getTileClassName({
+        date: new Date(2026, 5, 16),
+        period: PERIOD,
+        records: records([]),
+        holidays: EMPTY,
+        companyHolidays: EMPTY,
+        companyWorkingDays: EMPTY,
+      });
+      expect(result).toBe("tile-today");
+    });
+
+    it("ステータスありの今日はステータスのクラスとtile-todayが両方付与される", () => {
+      const result = getTileClassName({
+        date: new Date(2026, 5, 16),
+        period: PERIOD,
+        records: records([["2026-06-16", "office"]]),
+        holidays: EMPTY,
+        companyHolidays: EMPTY,
+        companyWorkingDays: EMPTY,
+      });
+      expect(result).toBe("tile-office tile-today");
+    });
+
+    it("今日以外の日付にはtile-todayが付与されない", () => {
+      const result = getTileClassName({
+        date: new Date(2026, 5, 17),
+        period: PERIOD,
+        records: records([]),
+        holidays: EMPTY,
+        companyHolidays: EMPTY,
+        companyWorkingDays: EMPTY,
+      });
+      expect(result).not.toContain("tile-today");
+    });
+  });
+});
+
+describe("isTodayDate", () => {
+  it("基準日と一致する日付文字列はtrue", () => {
+    expect(isTodayDate("2026-07-04", new Date(2026, 6, 4))).toBe(true);
+  });
+
+  it("基準日と異なる日付文字列はfalse", () => {
+    expect(isTodayDate("2026-07-05", new Date(2026, 6, 4))).toBe(false);
   });
 });

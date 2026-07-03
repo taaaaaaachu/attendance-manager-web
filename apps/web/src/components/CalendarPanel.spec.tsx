@@ -1,5 +1,5 @@
 import { fireEvent, render } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CalendarPanel } from "./CalendarPanel";
 
 const PERIOD = { startDate: "2026-06-16", endDate: "2026-07-15" };
@@ -87,5 +87,21 @@ describe("CalendarPanel", () => {
       />,
     );
     expect(container.querySelectorAll(".calendar-month")).toHaveLength(1);
+  });
+
+  describe("今日の日付のタイル", () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date(2026, 5, 16)); // 期間内(2026-06-16)を「今日」に固定
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("今日のタイルにtile-todayクラスが付与される", () => {
+      const { container } = renderCalendar();
+      expect(container.querySelector(".react-calendar__tile.tile-today")).not.toBeNull();
+    });
   });
 });

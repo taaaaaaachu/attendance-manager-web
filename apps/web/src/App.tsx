@@ -185,9 +185,9 @@ export default function App() {
   return (
     <div>
       <Header
-        period={period}
         onPrevMonth={() => setOffsetMonths((v) => v - 1)}
         onNextMonth={() => setOffsetMonths((v) => v + 1)}
+        onToday={() => setOffsetMonths(0)}
         onOpenSchedule={() => setOpenModal("schedule")}
         onOpenExport={() => setOpenModal("export")}
         onOpenSettings={() => setOpenModal("settings")}

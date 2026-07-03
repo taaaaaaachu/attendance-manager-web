@@ -1,15 +1,13 @@
-import type { Period } from "@attendance/shared";
-
 interface Props {
-  period: Period | null;
   onPrevMonth: () => void;
   onNextMonth: () => void;
+  onToday: () => void;
   onOpenSchedule: () => void;
   onOpenExport: () => void;
   onOpenSettings: () => void;
 }
 
-export function Header({ period, onPrevMonth, onNextMonth, onOpenSchedule, onOpenExport, onOpenSettings }: Props) {
+export function Header({ onPrevMonth, onNextMonth, onToday, onOpenSchedule, onOpenExport, onOpenSettings }: Props) {
   return (
     <header className="app-header">
       <div className="app-header-inner">
@@ -18,7 +16,9 @@ export function Header({ period, onPrevMonth, onNextMonth, onOpenSchedule, onOpe
           <button type="button" onClick={onPrevMonth}>
             ← 前期間
           </button>
-          <span>{period ? `${period.startDate} 〜 ${period.endDate}` : "読み込み中..."}</span>
+          <button type="button" onClick={onToday}>
+            今日
+          </button>
           <button type="button" onClick={onNextMonth}>
             翌期間 →
           </button>

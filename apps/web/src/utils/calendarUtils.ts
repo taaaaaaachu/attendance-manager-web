@@ -7,6 +7,10 @@ export const STATUS_EMOJI: Record<AttendanceStatus, string> = {
   paidleave: "🌴",
 };
 
+export function isTodayDate(dateStr: string, today: Date = new Date()): boolean {
+  return dateStr === formatDate(today);
+}
+
 export function getTileClassName(params: {
   date: Date;
   period: { startDate: string; endDate: string };
@@ -16,17 +20,19 @@ export function getTileClassName(params: {
   companyWorkingDays: ReadonlySet<string>;
 }): string {
   const dateStr = formatDate(params.date);
+  const todayClass = isTodayDate(dateStr) ? " tile-today" : "";
+
   if (dateStr < params.period.startDate || dateStr > params.period.endDate) {
-    return "tile-disabled";
+    return `tile-disabled${todayClass}`;
   }
 
   const record = params.records.get(dateStr);
-  if (record?.status === "office") return "tile-office";
-  if (record?.status === "remote") return "tile-remote";
-  if (record?.status === "paidleave") return "tile-paidleave";
+  if (record?.status === "office") return `tile-office${todayClass}`;
+  if (record?.status === "remote") return `tile-remote${todayClass}`;
+  if (record?.status === "paidleave") return `tile-paidleave${todayClass}`;
 
   if (isHoliday(dateStr, params.holidays, params.companyHolidays, params.companyWorkingDays)) {
-    return "tile-holiday";
+    return `tile-holiday${todayClass}`;
   }
-  return "";
+  return todayClass.trim();
 }

@@ -175,6 +175,39 @@
   color: #aaa !important;
 }
 
+.tile-today abbr {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tile-today abbr::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 24px;
+  height: 24px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 2px solid #facc15;
+  animation: today-pulse 1.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes today-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.6);
+  }
+  50% {
+    opacity: 0.5;
+    box-shadow: 0 0 0 4px rgba(250, 204, 21, 0);
+  }
+}
+
 .context-menu {
   position: fixed;
   z-index: 100;
