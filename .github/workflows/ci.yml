@@ -32,11 +32,6 @@ jobs:
           pnpm --filter @attendance/shared typecheck
           pnpm --filter @attendance/shared test
 
-      - name: workers/api - typecheck & test
-        run: |
-          pnpm --filter @attendance/api typecheck
-          pnpm --filter @attendance/api test
-
       - name: apps/web - typecheck & test
         run: |
           pnpm --filter @attendance/web typecheck
@@ -44,6 +39,13 @@ jobs:
 
       - name: apps/web - build
         run: pnpm --filter @attendance/web build
+
+      # workers/apiのテスト(vitest-pool-workers)はwrangler.jsoncのassets.directoryが
+      # 実在することを前提にするため、apps/webのビルドより後に実行する必要がある
+      - name: workers/api - typecheck & test
+        run: |
+          pnpm --filter @attendance/api typecheck
+          pnpm --filter @attendance/api test
 
   deploy:
     needs: test
