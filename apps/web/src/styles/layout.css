@@ -174,13 +174,14 @@
   background: #f3f4f6 !important;
   color: #aaa !important;
 }
+.tile-disabled.tile-holiday {
+  background: #f8dede !important;
+  color: #c98a8a !important;
+}
 
 .tile-today abbr {
   position: relative;
   z-index: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   font-weight: 700;
 }
 
@@ -193,21 +194,21 @@
   height: 26px;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  background: #eab308;
+  background: #f59e0b;
   z-index: -1;
-  animation: today-pulse 0.9s ease-in-out infinite;
+  animation: today-pulse 1.15s ease-in-out infinite;
   pointer-events: none;
 }
 
 @keyframes today-pulse {
   0%,
   100% {
-    background: #eab308;
-    box-shadow: 0 0 2px 0 rgba(234, 179, 8, 0.7);
+    background: #f59e0b;
+    box-shadow: 0 0 2px 0 rgba(245, 158, 11, 0.8);
   }
   50% {
-    background: #fde047;
-    box-shadow: 0 0 10px 4px rgba(250, 204, 21, 0.9);
+    background: #ffe135;
+    box-shadow: 0 0 12px 5px rgba(255, 225, 53, 0.95);
   }
 }
 

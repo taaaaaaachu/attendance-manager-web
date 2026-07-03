@@ -26,6 +26,18 @@ describe("getTileClassName", () => {
     expect(result).toBe("tile-disabled");
   });
 
+  it("期間外でも休日(土日)の日はtile-disabledとtile-holidayが両方付与される", () => {
+    const result = getTileClassName({
+      date: new Date(2026, 5, 13), // 2026-06-13は土曜、期間開始日より前
+      period: PERIOD,
+      records: records([]),
+      holidays: EMPTY,
+      companyHolidays: EMPTY,
+      companyWorkingDays: EMPTY,
+    });
+    expect(result).toBe("tile-disabled tile-holiday");
+  });
+
   it("出社ステータスのある日はtile-office", () => {
     const result = getTileClassName({
       date: new Date(2026, 5, 16),
