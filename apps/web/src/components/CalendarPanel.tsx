@@ -55,20 +55,25 @@ export function CalendarPanel({
             tileContent={({ date }) => {
               const dateStr = formatDate(date);
               const status = records.get(dateStr)?.status;
+              const isWithinPeriod = dateStr >= period.startDate && dateStr <= period.endDate;
               return (
                 <>
                   {status && <span className="tile-status-emoji">{STATUS_EMOJI[status]}</span>}
                   <div
                     className="tile-interaction-layer"
-                    style={{ position: "absolute", inset: 0, cursor: "pointer" }}
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      cursor: isWithinPeriod ? "pointer" : "default",
+                    }}
                     onClick={(e) => {
                       e.stopPropagation();
-                      onDayClick(dateStr);
+                      if (isWithinPeriod) onDayClick(dateStr);
                     }}
                     onContextMenu={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      onDayContextMenu(dateStr, e.clientX, e.clientY);
+                      if (isWithinPeriod) onDayContextMenu(dateStr, e.clientX, e.clientY);
                     }}
                   />
                 </>
