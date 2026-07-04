@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "attendance-manager-api",
+  "name": "attendance-manager",
   "main": "src/index.ts",
   "account_id": "e8175a8e88ef599f43bf8a4f07d0874d",
   "compatibility_date": "2026-07-01",
