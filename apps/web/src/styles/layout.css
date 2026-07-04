@@ -197,21 +197,19 @@
   transform: translate(-50%, -50%);
   border-radius: 50%;
   background: #f59e0b;
+  box-shadow: 0 0 2px 0 rgba(245, 158, 11, 0.8);
   z-index: -1;
-  animation: today-pulse 1.15s ease-in-out infinite;
+  transition:
+    background-color 0.5s ease-in-out,
+    box-shadow 0.5s ease-in-out;
   pointer-events: none;
 }
 
-@keyframes today-pulse {
-  0%,
-  100% {
-    background: #f59e0b;
-    box-shadow: 0 0 2px 0 rgba(245, 158, 11, 0.8);
-  }
-  50% {
-    background: #ffe135;
-    box-shadow: 0 0 12px 5px rgba(255, 225, 53, 0.95);
-  }
+/* 月をまたいで同じ日付が2つのカレンダーに表示されるケースがあるため、
+   要素ごとのCSSアニメーションではなくcalendar-panel単位のクラス切り替えで点滅を同期させる */
+.calendar-panel.pulse-bright .tile-today abbr::before {
+  background: #ffe135;
+  box-shadow: 0 0 12px 5px rgba(255, 225, 53, 0.95);
 }
 
 .context-menu {

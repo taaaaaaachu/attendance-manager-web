@@ -1,8 +1,11 @@
 import type { AttendanceRecord, Period } from "@attendance/shared";
 import { formatDate, parseDate } from "@attendance/shared";
+import { useEffect, useState } from "react";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import { getTileClassName, STATUS_EMOJI } from "../utils/calendarUtils";
+
+const TODAY_PULSE_INTERVAL_MS = 575;
 
 interface Props {
   period: Period;
@@ -35,9 +38,15 @@ export function CalendarPanel({
   onDayContextMenu,
 }: Props) {
   const months = monthStartDates(period);
+  const [pulseBright, setPulseBright] = useState(false);
+
+  useEffect(() => {
+    const timer = setInterval(() => setPulseBright((v) => !v), TODAY_PULSE_INTERVAL_MS);
+    return () => clearInterval(timer);
+  }, []);
 
   return (
-    <div className="calendar-panel">
+    <div className={`calendar-panel${pulseBright ? " pulse-bright" : ""}`}>
       {months.map((month) => (
         <div key={month.toISOString()} className="calendar-month">
           <div className="calendar-month-label">
