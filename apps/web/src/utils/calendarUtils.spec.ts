@@ -1,6 +1,6 @@
 import type { AttendanceRecord } from "@attendance/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { getTileClassName, isTodayDate } from "./calendarUtils";
+import { getNextClickStatus, getTileClassName, isTodayDate } from "./calendarUtils";
 
 const EMPTY = new Set<string>();
 const PERIOD = { startDate: "2026-06-16", endDate: "2026-07-15" };
@@ -143,6 +143,24 @@ describe("getTileClassName", () => {
       });
       expect(result).not.toContain("tile-today");
     });
+  });
+});
+
+describe("getNextClickStatus", () => {
+  it("未設定の日をクリックすると出社になる", () => {
+    expect(getNextClickStatus(undefined)).toBe("office");
+  });
+
+  it("出社の日をクリックすると在宅になる", () => {
+    expect(getNextClickStatus("office")).toBe("remote");
+  });
+
+  it("在宅の日をクリックすると出社になる", () => {
+    expect(getNextClickStatus("remote")).toBe("office");
+  });
+
+  it("有給の日をクリックすると出社になる", () => {
+    expect(getNextClickStatus("paidleave")).toBe("office");
   });
 });
 

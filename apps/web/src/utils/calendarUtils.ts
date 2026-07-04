@@ -11,6 +11,11 @@ export function isTodayDate(dateStr: string, today: Date = new Date()): boolean 
   return dateStr === formatDate(today);
 }
 
+/** カレンダーセルクリック時の次のステータスを返す(出社⇆在宅のトグル)。 */
+export function getNextClickStatus(current: AttendanceStatus | undefined): AttendanceStatus {
+  return current === "office" ? "remote" : "office";
+}
+
 export function getTileClassName(params: {
   date: Date;
   period: { startDate: string; endDate: string };

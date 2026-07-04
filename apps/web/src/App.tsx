@@ -26,6 +26,7 @@ import { SettingsModal } from "./components/modals/SettingsModal";
 import { StatsPanel } from "./components/StatsPanel";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
+import { getNextClickStatus } from "./utils/calendarUtils";
 
 type AuthView = "login" | "register";
 type ModalName = "settings" | "schedule" | "export" | null;
@@ -156,15 +157,7 @@ export default function App() {
 
   const handleDayClick = (date: string) => {
     if (!period || date < period.startDate || date > period.endDate) return;
-    const current = records.get(date)?.status;
-    // 出社 → 在宅 → 未設定 のサイクル(有給は右クリックメニューから設定する)
-    if (current === "office") {
-      applyStatus(date, "remote");
-    } else if (current === "remote") {
-      applyStatus(date, "clear");
-    } else {
-      applyStatus(date, "office");
-    }
+    applyStatus(date, getNextClickStatus(records.get(date)?.status));
   };
 
   const companyHolidaySet = new Set(companyHolidays);
