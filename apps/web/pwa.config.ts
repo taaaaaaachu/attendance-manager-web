@@ -36,7 +36,9 @@ export const pwaOptions: Partial<VitePWAOptions> = {
     cleanupOutdatedCaches: true,
     runtimeCaching: [
       {
-        urlPattern: /^\/api\//,
+        // RegExpを渡すとパスではなくフルURL(https://...)に対してテストされるため、
+        // /^\/api\// のようなパス先頭一致は一切マッチしない(ルールが死ぬ)。関数形式で判定する。
+        urlPattern: ({ url }) => url.pathname.startsWith("/api/"),
         handler: "NetworkOnly",
       },
     ],

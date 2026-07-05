@@ -28,12 +28,20 @@ describe("pwaOptions", () => {
     const runtimeCaching = pwaOptions.workbox?.runtimeCaching;
     expect(runtimeCaching).toBeDefined();
 
-    const apiRule = runtimeCaching?.find((rule) => {
-      const pattern = rule.urlPattern;
-      return pattern instanceof RegExp && pattern.test("/api/records");
-    });
+    // workboxのRegExpRouteはパスではなくフルURLに対してテストするため、RegExpの
+    // パス先頭一致パターンは決してマッチしない(死んだルールになる)。関数形式で、
+    // 実際にルーティング時へ渡されるのと同じフルURLでマッチすることを確認する。
+    const matches = (url: URL) =>
+      runtimeCaching?.find((rule) => {
+        const pattern = rule.urlPattern;
+        return typeof pattern === "function" && pattern({ url } as Parameters<typeof pattern>[0]);
+      });
+
+    const apiRule = matches(new URL("https://example.com/api/records"));
     expect(apiRule).toBeDefined();
     expect(apiRule?.handler).toBe("NetworkOnly");
+
+    expect(matches(new URL("https://example.com/assets/index.js"))).toBeUndefined();
   });
 
   it("navigateFallbackDenylistで/api/配下をSPAフォールバック対象から除外する", () => {
