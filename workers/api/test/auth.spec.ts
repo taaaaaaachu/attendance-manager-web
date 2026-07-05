@@ -19,6 +19,16 @@ function extractSessionCookie(res: Response): string {
   return match[0];
 }
 
+describe("GET /api/auth/refresh", () => {
+  it("認証なしでもトップページへの302を返す(Cloudflare Accessセッション復帰用)", async () => {
+    const res = await SELF.fetch("http://example.com/api/auth/refresh", {
+      redirect: "manual",
+    });
+    expect(res.status).toBe(302);
+    expect(res.headers.get("location")).toBe("/");
+  });
+});
+
 describe("POST /api/auth/register", () => {
   it("正しい入力で登録に成功し、セッションCookieが発行される", async () => {
     const res = await SELF.fetch("http://example.com/api/auth/register", {
