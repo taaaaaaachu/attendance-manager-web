@@ -11,6 +11,13 @@ import type { AppEnv } from "./types";
 
 const app = new Hono<AppEnv>();
 
+// APIの応答(認証層の302を含むリダイレクトも)がブラウザのHTTPキャッシュに残ると、
+// 古い応答が返り続けて認証復帰後もアプリが詰まる事故につながるため、一切キャッシュさせない
+app.use("/api/*", async (c, next) => {
+  await next();
+  c.header("Cache-Control", "no-store");
+});
+
 app.route("/api/auth", authRoutes);
 app.route("/api", recordRoutes);
 app.route("/api", settingsRoutes);
