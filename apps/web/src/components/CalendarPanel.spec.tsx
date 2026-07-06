@@ -28,6 +28,22 @@ function getLayerByDate(container: HTMLElement, label: string): HTMLElement {
   return layer as HTMLElement;
 }
 
+/** jsdomはPointerEventを完全実装していないため、MouseEventにpointerTypeを付与して発火する。 */
+function firePointerEvent(
+  el: HTMLElement,
+  type: "pointerdown" | "pointermove" | "pointerup",
+  init: { pointerType: string; clientX?: number; clientY?: number },
+) {
+  const event = new MouseEvent(type, {
+    bubbles: true,
+    cancelable: true,
+    clientX: init.clientX ?? 0,
+    clientY: init.clientY ?? 0,
+  });
+  Object.defineProperty(event, "pointerType", { value: init.pointerType });
+  fireEvent(el, event);
+}
+
 describe("CalendarPanel", () => {
   it("期間外(グレー表示)のセルをクリックしてもonDayClickは呼ばれない", () => {
     const { container, onDayClick } = renderCalendar();
@@ -152,6 +168,97 @@ describe("CalendarPanel", () => {
       />,
     );
     expect(container.querySelectorAll(".calendar-month")).toHaveLength(1);
+  });
+
+  describe("タッチ長押しでのコンテキストメニュー(iOS対応)", () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("タッチで500ms長押しするとonDayContextMenuが押下位置で呼ばれる", () => {
+      const { container, onDayContextMenu } = renderCalendar();
+      const layer = getLayerByDate(container, "2026年6月16日");
+
+      firePointerEvent(layer, "pointerdown", { pointerType: "touch", clientX: 30, clientY: 40 });
+      vi.advanceTimersByTime(500);
+
+      expect(onDayContextMenu).toHaveBeenCalledTimes(1);
+      expect(onDayContextMenu).toHaveBeenCalledWith("2026-06-16", 30, 40);
+    });
+
+    it("500ms経過前に指を離すとonDayContextMenuは呼ばれない", () => {
+      const { container, onDayContextMenu } = renderCalendar();
+      const layer = getLayerByDate(container, "2026年6月16日");
+
+      firePointerEvent(layer, "pointerdown", { pointerType: "touch" });
+      vi.advanceTimersByTime(300);
+      firePointerEvent(layer, "pointerup", { pointerType: "touch" });
+      vi.advanceTimersByTime(500);
+
+      expect(onDayContextMenu).not.toHaveBeenCalled();
+    });
+
+    it("長押し中に指が大きく動く(スクロール)とキャンセルされる", () => {
+      const { container, onDayContextMenu } = renderCalendar();
+      const layer = getLayerByDate(container, "2026年6月16日");
+
+      firePointerEvent(layer, "pointerdown", { pointerType: "touch", clientX: 30, clientY: 40 });
+      vi.advanceTimersByTime(200);
+      firePointerEvent(layer, "pointermove", { pointerType: "touch", clientX: 30, clientY: 80 });
+      vi.advanceTimersByTime(500);
+
+      expect(onDayContextMenu).not.toHaveBeenCalled();
+    });
+
+    it("マウスの押しっぱなしでは長押しメニューは開かない(右クリックはcontextmenu経由)", () => {
+      const { container, onDayContextMenu } = renderCalendar();
+      const layer = getLayerByDate(container, "2026年6月16日");
+
+      firePointerEvent(layer, "pointerdown", { pointerType: "mouse" });
+      vi.advanceTimersByTime(1000);
+
+      expect(onDayContextMenu).not.toHaveBeenCalled();
+    });
+
+    it("期間外のセルをタッチで長押ししてもonDayContextMenuは呼ばれない", () => {
+      const { container, onDayContextMenu } = renderCalendar();
+      const layer = container.querySelector(
+        ".react-calendar__tile.tile-disabled .tile-interaction-layer",
+      ) as HTMLElement;
+
+      firePointerEvent(layer, "pointerdown", { pointerType: "touch" });
+      vi.advanceTimersByTime(1000);
+
+      expect(onDayContextMenu).not.toHaveBeenCalled();
+    });
+
+    it("長押しでメニューを開いた後のclickではonDayClickが呼ばれない", () => {
+      const { container, onDayClick, onDayContextMenu } = renderCalendar();
+      const layer = getLayerByDate(container, "2026年6月16日");
+
+      firePointerEvent(layer, "pointerdown", { pointerType: "touch" });
+      vi.advanceTimersByTime(500);
+      expect(onDayContextMenu).toHaveBeenCalledTimes(1);
+
+      firePointerEvent(layer, "pointerup", { pointerType: "touch" });
+      fireEvent.click(layer);
+      expect(onDayClick).not.toHaveBeenCalled();
+    });
+
+    it("長押しでメニューを開いた後にネイティブのcontextmenuが発火しても二重に開かない(Android対策)", () => {
+      const { container, onDayContextMenu } = renderCalendar();
+      const layer = getLayerByDate(container, "2026年6月16日");
+
+      firePointerEvent(layer, "pointerdown", { pointerType: "touch" });
+      vi.advanceTimersByTime(500);
+      fireEvent.contextMenu(layer);
+
+      expect(onDayContextMenu).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe("今日の日付のタイル", () => {

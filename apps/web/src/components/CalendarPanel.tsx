@@ -1,11 +1,95 @@
 import type { AttendanceRecord, Period } from "@attendance/shared";
 import { formatDate, isHoliday, parseDate } from "@attendance/shared";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import { getTileClassName, STATUS_EMOJI } from "../utils/calendarUtils";
 
 const TODAY_PULSE_INTERVAL_MS = 575;
+
+// iOS Safariは長押しでcontextmenuイベントを発火しないため、タッチの長押しを自前検出する
+const LONG_PRESS_MS = 500;
+const LONG_PRESS_MOVE_TOLERANCE_PX = 10;
+
+interface TileInteractionLayerProps {
+  clickable: boolean;
+  contextMenuEnabled: boolean;
+  onDayClick: () => void;
+  onDayContextMenu: (x: number, y: number) => void;
+}
+
+function TileInteractionLayer({
+  clickable,
+  contextMenuEnabled,
+  onDayClick,
+  onDayContextMenu,
+}: TileInteractionLayerProps) {
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pressStart = useRef<{ x: number; y: number } | null>(null);
+  const longPressFired = useRef(false);
+
+  useEffect(() => {
+    return () => {
+      if (longPressTimer.current !== null) clearTimeout(longPressTimer.current);
+    };
+  }, []);
+
+  const cancelLongPress = () => {
+    if (longPressTimer.current !== null) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
+
+  return (
+    <div
+      className="tile-interaction-layer"
+      style={{
+        position: "absolute",
+        inset: 0,
+        cursor: clickable ? "pointer" : "default",
+      }}
+      onPointerDown={(e) => {
+        longPressFired.current = false;
+        if (e.pointerType !== "touch" || !contextMenuEnabled) return;
+        cancelLongPress();
+        pressStart.current = { x: e.clientX, y: e.clientY };
+        const { clientX, clientY } = e;
+        longPressTimer.current = setTimeout(() => {
+          longPressTimer.current = null;
+          longPressFired.current = true;
+          onDayContextMenu(clientX, clientY);
+        }, LONG_PRESS_MS);
+      }}
+      onPointerMove={(e) => {
+        if (longPressTimer.current === null || !pressStart.current) return;
+        const dx = e.clientX - pressStart.current.x;
+        const dy = e.clientY - pressStart.current.y;
+        if (Math.hypot(dx, dy) > LONG_PRESS_MOVE_TOLERANCE_PX) cancelLongPress();
+      }}
+      onPointerUp={cancelLongPress}
+      onPointerCancel={cancelLongPress}
+      onPointerLeave={cancelLongPress}
+      onTouchEnd={(e) => {
+        // 長押しでメニューを開いた後、指を離した際のclick発火(メニュー誤操作・即時クローズ)を抑止
+        if (longPressFired.current) e.preventDefault();
+      }}
+      onClick={(e) => {
+        e.stopPropagation();
+        if (longPressFired.current) return;
+        if (clickable) onDayClick();
+      }}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        // Android等はネイティブのcontextmenuも発火するため、自前の長押し検出と二重にならないようにする
+        cancelLongPress();
+        if (longPressFired.current) return;
+        if (contextMenuEnabled) onDayContextMenu(e.clientX, e.clientY);
+      }}
+    />
+  );
+}
 
 interface Props {
   period: Period;
@@ -70,22 +154,11 @@ export function CalendarPanel({
               return (
                 <>
                   {status && <span className="tile-status-emoji">{STATUS_EMOJI[status]}</span>}
-                  <div
-                    className="tile-interaction-layer"
-                    style={{
-                      position: "absolute",
-                      inset: 0,
-                      cursor: isWithinPeriod && !holiday ? "pointer" : "default",
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (isWithinPeriod && !holiday) onDayClick(dateStr);
-                    }}
-                    onContextMenu={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      if (isWithinPeriod) onDayContextMenu(dateStr, e.clientX, e.clientY);
-                    }}
+                  <TileInteractionLayer
+                    clickable={isWithinPeriod && !holiday}
+                    contextMenuEnabled={isWithinPeriod}
+                    onDayClick={() => onDayClick(dateStr)}
+                    onDayContextMenu={(x, y) => onDayContextMenu(dateStr, x, y)}
                   />
                 </>
               );

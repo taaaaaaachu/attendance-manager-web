@@ -151,6 +151,13 @@
   position: relative;
 }
 
+/* iOSで長押しした際にテキスト選択やコールアウトが出ると自前の長押しメニューと干渉するため抑止する */
+.calendar-panel {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 .tile-status-emoji {
   display: block;
   font-size: 14px;
