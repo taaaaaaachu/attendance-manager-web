@@ -1,5 +1,5 @@
 import type { AttendanceRecord, AttendanceStats, AttendanceStatus, Period, UserSettings } from "@attendance/shared";
-import { isHoliday } from "@attendance/shared";
+import { isBaseHoliday, isHoliday } from "@attendance/shared";
 import { useCallback, useEffect, useState } from "react";
 import { resetAttendance } from "./api/attendance";
 import type { CurrentUser } from "./api/auth";
@@ -211,6 +211,7 @@ export default function App() {
           isCompanyHoliday={companyHolidays.includes(contextMenu.date)}
           isCompanyWorkingDay={companyWorkingDays.includes(contextMenu.date)}
           isHoliday={isHoliday(contextMenu.date, holidays, companyHolidaySet, companyWorkingDaySet)}
+          isBaseHoliday={isBaseHoliday(contextMenu.date, holidays)}
           onSelect={(action) => {
             if (action === "toggleCompanyHoliday") {
               toggleCompanyHoliday(contextMenu.date);
@@ -229,6 +230,7 @@ export default function App() {
         <SettingsModal
           user={user}
           settings={settings}
+          holidays={holidays}
           companyHolidays={companyHolidays}
           companyWorkingDays={companyWorkingDays}
           onClose={() => setOpenModal(null)}

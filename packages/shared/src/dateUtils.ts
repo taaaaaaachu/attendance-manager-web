@@ -40,6 +40,15 @@ export function resolveClosingDate(year: number, month: number, closingDay: numb
 }
 
 /**
+ * 指定日が「もともと休日」(土日または国民の祝日)かどうかを判定する。
+ * 会社休日・会社営業日の設定は考慮しない。
+ */
+export function isBaseHoliday(dateStr: string, holidays: ReadonlySet<string>): boolean {
+  const weekday = getDay(parseDate(dateStr)); // 0=Sun, 6=Sat
+  return weekday === 0 || weekday === 6 || holidays.has(dateStr);
+}
+
+/**
  * 指定日が休日かどうかを判定する。
  * 1. companyWorkingDaysに含まれていれば → 営業日(休日ではない)
  * 2. 土日、国民の祝日、会社休日のいずれかなら → 休日
@@ -53,11 +62,7 @@ export function isHoliday(
   if (companyWorkingDays.has(dateStr)) {
     return false;
   }
-  const weekday = getDay(parseDate(dateStr)); // 0=Sun, 6=Sat
-  if (weekday === 0 || weekday === 6) {
-    return true;
-  }
-  return holidays.has(dateStr) || companyHolidays.has(dateStr);
+  return isBaseHoliday(dateStr, holidays) || companyHolidays.has(dateStr);
 }
 
 /**

@@ -6,6 +6,7 @@ import {
   getCurrentPeriod,
   getMandatoryOfficeDays,
   getPeriodForMonthOffset,
+  isBaseHoliday,
   isHoliday,
   resolveClosingDate,
 } from "../src/dateUtils";
@@ -32,6 +33,25 @@ describe("resolveClosingDate", () => {
 
   it("12月のclosingDay=0は12月31日を返す(年またぎ)", () => {
     expect(resolveClosingDate(2026, 12, 0)).toBe("2026-12-31");
+  });
+});
+
+describe("isBaseHoliday", () => {
+  it("土曜日はもともと休日", () => {
+    expect(isBaseHoliday("2026-02-14", EMPTY)).toBe(true); // 2026-02-14は土曜
+  });
+
+  it("日曜日はもともと休日", () => {
+    expect(isBaseHoliday("2026-02-15", EMPTY)).toBe(true);
+  });
+
+  it("国民の祝日はもともと休日", () => {
+    const holidays = new Set(["2026-02-11"]);
+    expect(isBaseHoliday("2026-02-11", holidays)).toBe(true); // 水曜だが祝日
+  });
+
+  it("平日はもともと休日ではない", () => {
+    expect(isBaseHoliday("2026-02-16", EMPTY)).toBe(false); // 月曜
   });
 });
 

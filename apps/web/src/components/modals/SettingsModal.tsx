@@ -1,11 +1,14 @@
 import type { UserSettings } from "@attendance/shared";
+import { isBaseHoliday } from "@attendance/shared";
 import { useState } from "react";
 import type { CurrentUser } from "../../api/auth";
+import { AlertDialog } from "./AlertDialog";
 import { ConfirmDialog } from "./ConfirmDialog";
 
 interface Props {
   user: CurrentUser;
   settings: UserSettings;
+  holidays: ReadonlySet<string>;
   companyHolidays: string[];
   companyWorkingDays: string[];
   onClose: () => void;
@@ -32,6 +35,7 @@ export function SettingsModal(props: Props) {
   const [newWorkingDay, setNewWorkingDay] = useState("");
   const [saving, setSaving] = useState(false);
   const [pendingReset, setPendingReset] = useState<"period" | "all" | null>(null);
+  const [validationMessage, setValidationMessage] = useState<string | null>(null);
 
   const handleSave = async () => {
     const mandatoryOfficeDayRules = mandatoryDaysText
@@ -125,6 +129,11 @@ export function SettingsModal(props: Props) {
               type="button"
               onClick={async () => {
                 if (!newHoliday) return;
+                // もともと休日(土日祝)は会社休日にする意味がない
+                if (isBaseHoliday(newHoliday, props.holidays)) {
+                  setValidationMessage("もともと休日です");
+                  return;
+                }
                 await props.onAddCompanyHoliday(newHoliday);
                 setNewHoliday("");
               }}
@@ -152,6 +161,11 @@ export function SettingsModal(props: Props) {
               type="button"
               onClick={async () => {
                 if (!newWorkingDay) return;
+                // もともと平日は会社営業日にする意味がない
+                if (!isBaseHoliday(newWorkingDay, props.holidays)) {
+                  setValidationMessage("もともと平日です");
+                  return;
+                }
                 await props.onAddCompanyWorkingDay(newWorkingDay);
                 setNewWorkingDay("");
               }}
@@ -195,6 +209,10 @@ export function SettingsModal(props: Props) {
           </button>
         </div>
       </div>
+
+      {validationMessage && (
+        <AlertDialog message={validationMessage} onClose={() => setValidationMessage(null)} />
+      )}
 
       {pendingReset && (
         <ConfirmDialog
