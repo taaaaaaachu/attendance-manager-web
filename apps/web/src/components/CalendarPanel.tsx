@@ -1,5 +1,5 @@
 import type { AttendanceRecord, Period } from "@attendance/shared";
-import { formatDate, parseDate } from "@attendance/shared";
+import { formatDate, isHoliday, parseDate } from "@attendance/shared";
 import { useEffect, useState } from "react";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
@@ -65,6 +65,8 @@ export function CalendarPanel({
               const dateStr = formatDate(date);
               const status = records.get(dateStr)?.status;
               const isWithinPeriod = dateStr >= period.startDate && dateStr <= period.endDate;
+              // 休日はクリックでの勤怠トグル対象外(右クリックの会社営業日設定は可能)
+              const holiday = isHoliday(dateStr, holidays, companyHolidays, companyWorkingDays);
               return (
                 <>
                   {status && <span className="tile-status-emoji">{STATUS_EMOJI[status]}</span>}
@@ -73,11 +75,11 @@ export function CalendarPanel({
                     style={{
                       position: "absolute",
                       inset: 0,
-                      cursor: isWithinPeriod ? "pointer" : "default",
+                      cursor: isWithinPeriod && !holiday ? "pointer" : "default",
                     }}
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (isWithinPeriod) onDayClick(dateStr);
+                      if (isWithinPeriod && !holiday) onDayClick(dateStr);
                     }}
                     onContextMenu={(e) => {
                       e.preventDefault();

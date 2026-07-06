@@ -13,6 +13,8 @@ interface Props {
   y: number;
   isCompanyHoliday: boolean;
   isCompanyWorkingDay: boolean;
+  /** 休日(土日祝・会社休日)の場合はtrue。出社/在宅/有給の変更を無効化する。 */
+  isHoliday: boolean;
   onSelect: (action: ContextMenuAction) => void;
   onClose: () => void;
 }
@@ -26,7 +28,7 @@ const STATUS_OPTIONS: { status: AttendanceStatus | "clear"; label: string }[] = 
 
 const VIEWPORT_MARGIN = 8;
 
-export function ContextMenu({ x, y, isCompanyHoliday, isCompanyWorkingDay, onSelect, onClose }: Props) {
+export function ContextMenu({ x, y, isCompanyHoliday, isCompanyWorkingDay, isHoliday, onSelect, onClose }: Props) {
   const menuRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState({ left: x, top: y });
 
@@ -62,7 +64,12 @@ export function ContextMenu({ x, y, isCompanyHoliday, isCompanyWorkingDay, onSel
       onClick={(e) => e.stopPropagation()}
     >
       {STATUS_OPTIONS.map((option) => (
-        <button key={option.status} type="button" onClick={() => onSelect(option.status)}>
+        <button
+          key={option.status}
+          type="button"
+          disabled={isHoliday && option.status !== "clear"}
+          onClick={() => onSelect(option.status)}
+        >
           {option.label}
         </button>
       ))}
@@ -71,7 +78,7 @@ export function ContextMenu({ x, y, isCompanyHoliday, isCompanyWorkingDay, onSel
         {isCompanyHoliday ? "会社休日を解除" : "会社休日にする"}
       </button>
       <button type="button" onClick={() => onSelect("toggleCompanyWorkingDay")}>
-        {isCompanyWorkingDay ? "会社営業日を解除" : "会社営業日にする(祝日でも出社日扱い)"}
+        {isCompanyWorkingDay ? "会社営業日を解除" : "会社営業日にする"}
       </button>
     </div>
   );

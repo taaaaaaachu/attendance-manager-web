@@ -145,7 +145,7 @@ export function SettingsModal(props: Props) {
         </div>
 
         <div className="field">
-          <label>会社営業日(祝日でも出社日にする日)</label>
+          <label>会社営業日</label>
           <div style={{ display: "flex", gap: "6px" }}>
             <input type="date" value={newWorkingDay} onChange={(e) => setNewWorkingDay(e.target.value)} />
             <button

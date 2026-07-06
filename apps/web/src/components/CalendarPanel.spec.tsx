@@ -20,6 +20,14 @@ function renderCalendar(onDayClick = vi.fn(), onDayContextMenu = vi.fn()) {
   return { ...utils, onDayClick, onDayContextMenu };
 }
 
+/** 指定日付のタイル内インタラクションレイヤーを取得する。 */
+function getLayerByDate(container: HTMLElement, label: string): HTMLElement {
+  const abbr = container.querySelector(`abbr[aria-label="${label}"]`);
+  const layer = abbr?.closest(".react-calendar__tile")?.querySelector(".tile-interaction-layer");
+  expect(layer).not.toBeNull();
+  return layer as HTMLElement;
+}
+
 describe("CalendarPanel", () => {
   it("期間外(グレー表示)のセルをクリックしてもonDayClickは呼ばれない", () => {
     const { container, onDayClick } = renderCalendar();
@@ -67,6 +75,63 @@ describe("CalendarPanel", () => {
     fireEvent.contextMenu(enabledLayer);
     expect(onDayContextMenu).toHaveBeenCalledTimes(1);
     expect(onDayContextMenu.mock.calls[0][0]).toBe("2026-06-16");
+  });
+
+  it("休日(土曜)のセルをクリックしてもonDayClickは呼ばれない", () => {
+    const { container, onDayClick } = renderCalendar();
+
+    // 2026-06-20は土曜日(期間内)
+    const layer = getLayerByDate(container, "2026年6月20日");
+    fireEvent.click(layer);
+    expect(onDayClick).not.toHaveBeenCalled();
+  });
+
+  it("休日(土曜)のセルでも右クリックのonDayContextMenuは呼ばれる(会社営業日設定のため)", () => {
+    const { container, onDayContextMenu } = renderCalendar();
+
+    const layer = getLayerByDate(container, "2026年6月20日");
+    fireEvent.contextMenu(layer);
+    expect(onDayContextMenu).toHaveBeenCalledTimes(1);
+    expect(onDayContextMenu.mock.calls[0][0]).toBe("2026-06-20");
+  });
+
+  it("会社休日にした平日のセルをクリックしてもonDayClickは呼ばれない", () => {
+    const onDayClick = vi.fn();
+    const { container } = render(
+      <CalendarPanel
+        period={PERIOD}
+        records={new Map()}
+        holidays={EMPTY}
+        companyHolidays={new Set(["2026-06-17"])}
+        companyWorkingDays={EMPTY}
+        onDayClick={onDayClick}
+        onDayContextMenu={vi.fn()}
+      />,
+    );
+
+    // 2026-06-17は水曜日だが会社休日に設定済み
+    const layer = getLayerByDate(container, "2026年6月17日");
+    fireEvent.click(layer);
+    expect(onDayClick).not.toHaveBeenCalled();
+  });
+
+  it("会社営業日にした土曜のセルはクリックでonDayClickが呼ばれる", () => {
+    const onDayClick = vi.fn();
+    const { container } = render(
+      <CalendarPanel
+        period={PERIOD}
+        records={new Map()}
+        holidays={EMPTY}
+        companyHolidays={EMPTY}
+        companyWorkingDays={new Set(["2026-06-20"])}
+        onDayClick={onDayClick}
+        onDayContextMenu={vi.fn()}
+      />,
+    );
+
+    const layer = getLayerByDate(container, "2026年6月20日");
+    fireEvent.click(layer);
+    expect(onDayClick).toHaveBeenCalledWith("2026-06-20");
   });
 
   it("期間が2ヶ月にまたがる場合は2つの月カレンダーを表示する", () => {

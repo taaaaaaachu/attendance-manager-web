@@ -49,6 +49,7 @@ describe("ContextMenu", () => {
         y={10}
         isCompanyHoliday={false}
         isCompanyWorkingDay={false}
+        isHoliday={false}
         onSelect={() => {}}
         onClose={() => {}}
       />,
@@ -68,6 +69,7 @@ describe("ContextMenu", () => {
         y={790}
         isCompanyHoliday={false}
         isCompanyWorkingDay={false}
+        isHoliday={false}
         onSelect={() => {}}
         onClose={() => {}}
       />,
@@ -87,6 +89,7 @@ describe("ContextMenu", () => {
         y={50}
         isCompanyHoliday={false}
         isCompanyWorkingDay={false}
+        isHoliday={false}
         onSelect={() => {}}
         onClose={() => {}}
       />,
@@ -106,6 +109,7 @@ describe("ContextMenu", () => {
         y={10}
         isCompanyHoliday={true}
         isCompanyWorkingDay={true}
+        isHoliday={false}
         onSelect={() => {}}
         onClose={() => {}}
       />,
@@ -113,5 +117,66 @@ describe("ContextMenu", () => {
 
     expect(screen.getByText("会社休日を解除")).toBeInTheDocument();
     expect(screen.getByText("会社営業日を解除")).toBeInTheDocument();
+  });
+
+  it("会社営業日にするのラベルにカッコ書きの説明が付かない", () => {
+    mockMenuSize(200, 150);
+
+    render(
+      <ContextMenu
+        x={10}
+        y={10}
+        isCompanyHoliday={false}
+        isCompanyWorkingDay={false}
+        isHoliday={false}
+        onSelect={() => {}}
+        onClose={() => {}}
+      />,
+    );
+
+    expect(screen.getByText("会社営業日にする")).toBeInTheDocument();
+  });
+
+  it("休日(isHoliday=true)では出社/在宅/有給が無効化され、未設定にするや会社休日/会社営業日の切替は有効のまま", () => {
+    mockMenuSize(200, 150);
+
+    render(
+      <ContextMenu
+        x={10}
+        y={10}
+        isCompanyHoliday={false}
+        isCompanyWorkingDay={false}
+        isHoliday={true}
+        onSelect={() => {}}
+        onClose={() => {}}
+      />,
+    );
+
+    expect(screen.getByText("🏢 出社")).toBeDisabled();
+    expect(screen.getByText("🏠 在宅")).toBeDisabled();
+    expect(screen.getByText("🌴 有給")).toBeDisabled();
+    expect(screen.getByText("⬜ 未設定にする")).toBeEnabled();
+    expect(screen.getByText("会社休日にする")).toBeEnabled();
+    expect(screen.getByText("会社営業日にする")).toBeEnabled();
+  });
+
+  it("平日(isHoliday=false)では出社/在宅/有給が有効", () => {
+    mockMenuSize(200, 150);
+
+    render(
+      <ContextMenu
+        x={10}
+        y={10}
+        isCompanyHoliday={false}
+        isCompanyWorkingDay={false}
+        isHoliday={false}
+        onSelect={() => {}}
+        onClose={() => {}}
+      />,
+    );
+
+    expect(screen.getByText("🏢 出社")).toBeEnabled();
+    expect(screen.getByText("🏠 在宅")).toBeEnabled();
+    expect(screen.getByText("🌴 有給")).toBeEnabled();
   });
 });

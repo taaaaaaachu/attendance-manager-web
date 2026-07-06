@@ -1,4 +1,5 @@
 import type { AttendanceRecord, AttendanceStats, AttendanceStatus, Period, UserSettings } from "@attendance/shared";
+import { isHoliday } from "@attendance/shared";
 import { useCallback, useEffect, useState } from "react";
 import { resetAttendance } from "./api/attendance";
 import type { CurrentUser } from "./api/auth";
@@ -155,13 +156,15 @@ export default function App() {
     }
   };
 
-  const handleDayClick = (date: string) => {
-    if (!period || date < period.startDate || date > period.endDate) return;
-    applyStatus(date, getNextClickStatus(records.get(date)?.status));
-  };
-
   const companyHolidaySet = new Set(companyHolidays);
   const companyWorkingDaySet = new Set(companyWorkingDays);
+
+  const handleDayClick = (date: string) => {
+    if (!period || date < period.startDate || date > period.endDate) return;
+    // 休日(土日祝・会社休日)は勤怠を設定できない。先に会社営業日にする必要がある。
+    if (isHoliday(date, holidays, companyHolidaySet, companyWorkingDaySet)) return;
+    applyStatus(date, getNextClickStatus(records.get(date)?.status));
+  };
 
   if (authLoading) {
     return <p style={{ padding: 24 }}>読み込み中...</p>;
@@ -207,6 +210,7 @@ export default function App() {
           y={contextMenu.y}
           isCompanyHoliday={companyHolidays.includes(contextMenu.date)}
           isCompanyWorkingDay={companyWorkingDays.includes(contextMenu.date)}
+          isHoliday={isHoliday(contextMenu.date, holidays, companyHolidaySet, companyWorkingDaySet)}
           onSelect={(action) => {
             if (action === "toggleCompanyHoliday") {
               toggleCompanyHoliday(contextMenu.date);
