@@ -49,4 +49,11 @@ describe("pwaOptions", () => {
     expect(denylist?.some((pattern) => pattern.test("/api/records"))).toBe(true);
     expect(denylist?.some((pattern) => pattern.test("/settings"))).toBe(false);
   });
+
+  it("navigateFallbackDenylistで/cdn-cgi/配下(Accessの認証コールバック等)を除外する", () => {
+    // /cdn-cgi/access/authorizedをSWが横取りするとCF_Authorization Cookieが設定されず
+    // 認証ループに陥る(2026-07-07に本番で発生)。Cloudflare予約パス全体を除外する
+    const denylist = pwaOptions.workbox?.navigateFallbackDenylist;
+    expect(denylist?.some((pattern) => pattern.test("/cdn-cgi/access/authorized"))).toBe(true);
+  });
 });
