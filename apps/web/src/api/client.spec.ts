@@ -61,7 +61,7 @@ describe("apiFetch", () => {
     expect(assignSpy).toHaveBeenCalledExactlyOnceWith("/api/auth/refresh");
   });
 
-  it("直近60秒以内にリダイレクト済みなら再遷移せず、再読み込みを促すメッセージでthrowする", async () => {
+  it("直近60秒以内にリダイレクト済みなら再遷移せず、再読み込みを促すメッセージでthrowする(SW未対応環境)", async () => {
     mockFetchResponse(opaqueRedirect);
 
     await expect(apiFetch("/records")).rejects.toThrow(
@@ -71,6 +71,45 @@ describe("apiFetch", () => {
       "認証状態を確認できませんでした。ページを再読み込みしてください",
     );
     expect(assignSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it("リダイレクト直後に再びopaqueredirectを検出したらSWを解除してリロードする(自己修復)", async () => {
+    const unregister = vi.fn().mockResolvedValue(true);
+    vi.stubGlobal("navigator", {
+      serviceWorker: { getRegistrations: vi.fn().mockResolvedValue([{ unregister }]) },
+    });
+    const reloadSpy = vi.spyOn(navigation, "reload").mockImplementation(() => {});
+    mockFetchResponse(opaqueRedirect);
+
+    // 1回目は通常どおり/api/auth/refreshへ遷移
+    await expect(apiFetch("/auth/me")).rejects.toThrow(
+      "ログインセッションの有効期限が切れました。再ログインしています…",
+    );
+    // 遷移から戻った直後(60秒以内)にまた検出=復帰フローが完走していない → SW解除+リロード
+    await expect(apiFetch("/auth/me")).rejects.toThrow(
+      "認証の復旧処理中です。ページを自動的に再読み込みします…",
+    );
+    expect(unregister).toHaveBeenCalledTimes(1);
+    expect(reloadSpy).toHaveBeenCalledTimes(1);
+    expect(assignSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it("直近5分以内にSWリセット試行済みなら再リセットせず、再読み込みを促すメッセージにする", async () => {
+    const unregister = vi.fn().mockResolvedValue(true);
+    vi.stubGlobal("navigator", {
+      serviceWorker: { getRegistrations: vi.fn().mockResolvedValue([{ unregister }]) },
+    });
+    const reloadSpy = vi.spyOn(navigation, "reload").mockImplementation(() => {});
+    // スロットル有効+SWリセット試行済みの状態を作る
+    sessionStorage.setItem("authRedirectAt", String(Date.now()));
+    sessionStorage.setItem("authSwResetAt", String(Date.now()));
+    mockFetchResponse(opaqueRedirect);
+
+    await expect(apiFetch("/auth/me")).rejects.toThrow(
+      "認証状態を確認できませんでした。ページを再読み込みしてください",
+    );
+    expect(unregister).not.toHaveBeenCalled();
+    expect(reloadSpy).not.toHaveBeenCalled();
   });
 
   it("前回のリダイレクトから60秒経過していれば再度遷移する", async () => {
