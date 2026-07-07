@@ -6,7 +6,8 @@
 ## 技術スタック
 
 - **Cloudflare Workers**: 単一WorkerでAPI(Hono)とフロントエンド静的アセットを両方配信
-- **Cloudflare D1**: データストア(users / sessions / attendance_records / company_holidays / company_working_days / user_settings / japan_holidays)
+- **Cloudflare Access**: 認証層。Accessで認証されたメールアドレスがそのままアプリのユーザーIDになる
+- **Cloudflare D1**: データストア(attendance_records / company_holidays / company_working_days / user_settings / japan_holidays)
 - **React 19 + Vite**: フロントエンド(`apps/web`)
 - **TypeScript**: 期間計算・営業日判定・統計計算ロジック(`packages/shared`)、デスクトップ版のRust実装を参照して独自に実装
 
@@ -30,12 +31,16 @@ pnpm install
 
 ## ローカル開発
 
-1. D1のローカルマイグレーションを適用(初回のみ):
+1. D1のローカルマイグレーションを適用(初回のみ)と、ローカル用の認証バイパス設定:
 
    ```bash
    cd workers/api
    pnpm db:migrate:local
+   cp .dev.vars.example .dev.vars
    ```
+
+   ローカルにはCloudflare Access層がないため、`.dev.vars` の `DEV_USER_EMAIL` で
+   固定ユーザーとして動作する(本番ではこの変数を設定しないこと)。
 
 2. フロントエンドをビルドしてWorker側のassetsディレクトリに出力:
 
@@ -125,15 +130,20 @@ cd workers/api && pnpm test
   アイコン表示・自動更新の確認は目視で行う必要がある(Chrome DevToolsのApplicationタブでの
   Manifest/Service Worker登録状態確認も有用)。
 
-## セキュリティ上の注意・トレードオフ
+## 認証(Cloudflare Access)
 
-- パスワードは PBKDF2-HMAC-SHA256 でハッシュ化している。**反復回数は15,000回**に設定しており、
-  OWASP推奨値(600,000回)より大幅に低い。これはCloudflare Workers Freeプランの
-  「1リクエストあたりCPU時間10ms」という制限内に収めるためのトレードオフ。実測では15,000回で
-  約6ms(`workers/api/src/routes/auth.ts` のコメント参照)。将来的に有料プランへ移行する場合は
-  反復回数を引き上げることを検討する。
-- セッションはCookie(HttpOnly, Secure, SameSite=Lax)+D1の`sessions`テーブルで管理。
-- ログイン失敗はレート制限(直近5分で5回失敗するとロックアウト)している。
+認証はCloudflare Accessに一本化している(独自のID/パスワード認証は廃止済み)。
+
+- Accessを通過したリクエストに付く `Cf-Access-Jwt-Assertion`(JWT)をWorker側で検証し、
+  `email` クレームをユーザーIDとして使う(`workers/api/src/middleware/accessAuth.ts`)。
+  署名・kid・aud・issuer・有効期限をすべて検証し、ヘッダを鵜呑みにしない。
+- チームドメインとAUDタグは `workers/api/wrangler.jsonc` の `vars`
+  (`ACCESS_TEAM_DOMAIN` / `ACCESS_AUD`)で設定。AUDタグはZero Trustダッシュボードの
+  Access → Applications → 該当アプリで確認できる。
+- workers.devサブドメインはAccessで保護されないため `workers_dev: false` を明示している。
+- Accessセッション切れはフロントの `apiFetch` がopaqueredirectとして検出し、
+  `/api/auth/refresh` へのトップレベル遷移で自動復帰する(`apps/web/src/api/client.ts`)。
+- ログアウトは `/cdn-cgi/access/logout` への遷移で行う。
 
 ## 既知の制約・今後の課題
 
