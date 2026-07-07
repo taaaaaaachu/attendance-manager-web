@@ -3,7 +3,7 @@ import { isBaseHoliday, isHoliday } from "@attendance/shared";
 import { useCallback, useEffect, useState } from "react";
 import { resetAttendance } from "./api/attendance";
 import type { CurrentUser } from "./api/auth";
-import { fetchCurrentUser, login, logout, register } from "./api/auth";
+import { fetchCurrentUser, logout } from "./api/auth";
 import { ApiError } from "./api/client";
 import {
   addCompanyHoliday,
@@ -25,17 +25,13 @@ import { ExportModal } from "./components/modals/ExportModal";
 import { ScheduleModal } from "./components/modals/ScheduleModal";
 import { SettingsModal } from "./components/modals/SettingsModal";
 import { StatsPanel } from "./components/StatsPanel";
-import { LoginPage } from "./pages/LoginPage";
-import { RegisterPage } from "./pages/RegisterPage";
 import { getNextClickStatus } from "./utils/calendarUtils";
 
-type AuthView = "login" | "register";
 type ModalName = "settings" | "schedule" | "export" | null;
 
 export default function App() {
   const [authLoading, setAuthLoading] = useState(true);
   const [user, setUser] = useState<CurrentUser | null>(null);
-  const [authView, setAuthView] = useState<AuthView>("login");
 
   const [offsetMonths, setOffsetMonths] = useState(0);
   const [period, setPeriod] = useState<Period | null>(null);
@@ -99,20 +95,9 @@ export default function App() {
     loadPeriodData();
   }, [user, loadPeriodData]);
 
-  const handleLogin = async (userId: string, password: string) => {
-    await login(userId, password);
-    setUser(await fetchCurrentUser());
-  };
-
-  const handleRegister = async (userId: string, password: string) => {
-    await register(userId, password);
-    setUser(await fetchCurrentUser());
-  };
-
-  const handleLogout = async () => {
-    await logout();
-    setUser(null);
-    setOpenModal(null);
+  // 認証はCloudflare Accessに一本化されているため、Accessのログアウトへ遷移する
+  const handleLogout = () => {
+    logout();
   };
 
   const applyStatus = async (date: string, status: AttendanceStatus | "clear") => {
@@ -171,10 +156,20 @@ export default function App() {
   }
 
   if (!user) {
-    return authView === "login" ? (
-      <LoginPage onLogin={handleLogin} onNavigateToRegister={() => setAuthView("register")} />
-    ) : (
-      <RegisterPage onRegister={handleRegister} onNavigateToLogin={() => setAuthView("login")} />
+    // 通常はここに来ない(認証切れはapiFetchがAccess再認証へ遷移させる)。
+    // 自動復帰が抑止されている間などのフォールバック画面。
+    return (
+      <div className="auth-page">
+        <div className="auth-form">
+          <h1>認証情報を取得できませんでした</h1>
+          <p className="auth-error">
+            Cloudflareの認証が切れている可能性があります。ページを再読み込みしてください。
+          </p>
+          <button type="button" onClick={() => window.location.reload()}>
+            再読み込み
+          </button>
+        </div>
+      </div>
     );
   }
 

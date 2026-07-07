@@ -1,17 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { login, logout, register } from "./auth";
+import { fetchCurrentUser, logout } from "./auth";
 import { navigation } from "./client";
 
-const opaqueRedirect = { ok: false, status: 0, type: "opaqueredirect" } as Response;
-
-describe("auth API(userInitiatedの配線)", () => {
+describe("auth API(Cloudflare Access一本化)", () => {
   let assignSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     sessionStorage.clear();
-    // 直近にリダイレクト済み(スロットル有効)の状態を作る
-    sessionStorage.setItem("authRedirectAt", String(Date.now()));
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(opaqueRedirect));
     assignSpy = vi.spyOn(navigation, "assign").mockImplementation(() => {});
   });
 
@@ -20,14 +15,24 @@ describe("auth API(userInitiatedの配線)", () => {
     vi.restoreAllMocks();
   });
 
-  it.each([
-    ["login", () => login("alice", "password123")],
-    ["register", () => register("alice", "password123")],
-    ["logout", () => logout()],
-  ])("%s はスロットル中でもopaqueredirect検出時に再認証へ遷移する", async (_name, call) => {
-    await expect(call()).rejects.toThrow(
-      "ログインセッションの有効期限が切れました。再ログインしています…",
-    );
-    expect(assignSpy).toHaveBeenCalledExactlyOnceWith("/api/auth/refresh");
+  it("fetchCurrentUserは/api/auth/meからユーザー情報を取得する", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      type: "basic",
+      json: () => Promise.resolve({ userId: "alice@example.com", email: "alice@example.com" }),
+    } as unknown as Response);
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(fetchCurrentUser()).resolves.toEqual({
+      userId: "alice@example.com",
+      email: "alice@example.com",
+    });
+    expect(fetchMock).toHaveBeenCalledWith("/api/auth/me", expect.anything());
+  });
+
+  it("logoutはCloudflare Accessのログアウトへ遷移する", () => {
+    logout();
+    expect(assignSpy).toHaveBeenCalledExactlyOnceWith("/cdn-cgi/access/logout");
   });
 });
