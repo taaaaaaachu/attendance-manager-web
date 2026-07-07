@@ -5,6 +5,12 @@
   "account_id": "e8175a8e88ef599f43bf8a4f07d0874d",
   "compatibility_date": "2026-07-01",
   "routes": [{ "pattern": "attendance-manager.example.com", "custom_domain": true }],
+  // workers.devのURLはCloudflare Accessで保護されないため必ず無効化する
+  "workers_dev": false,
+  "vars": {
+    "ACCESS_TEAM_DOMAIN": "example.cloudflareaccess.com",
+    "ACCESS_AUD": "876253fd9d5b82d3862f7b3d80d5a475b71d35934c7aacdb76cc264724562e41"
+  },
   "assets": {
     "directory": "../../apps/web/dist",
     "binding": "ASSETS",

@@ -10,11 +10,11 @@ import {
   getJapanHolidays,
   getUserSettings,
 } from "../lib/data";
-import { requireAuth } from "../middleware/requireAuth";
+import { requireAccessAuth } from "../middleware/accessAuth";
 import type { AppEnv } from "../types";
 
 const attendance = new Hono<AppEnv>();
-attendance.use("*", requireAuth);
+attendance.use("*", requireAccessAuth);
 
 attendance.post("/reset", async (c) => {
   const body = await c.req.json<{ scope?: "period" | "all"; offsetMonths?: number }>();

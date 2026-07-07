@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { getJapanHolidays, saveJapanHolidays } from "../lib/data";
-import { requireAuth } from "../middleware/requireAuth";
+import { requireAccessAuth } from "../middleware/accessAuth";
 import type { AppEnv } from "../types";
 
 const CABINET_OFFICE_CSV_URL = "https://www8.cao.go.jp/chosei/shukujitsu/syukujitsu.csv";
@@ -28,7 +28,7 @@ export function parseCabinetOfficeCsv(text: string): string[] {
 }
 
 const holidays = new Hono<AppEnv>();
-holidays.use("*", requireAuth);
+holidays.use("*", requireAccessAuth);
 
 holidays.get("/", async (c) => {
   const year = c.req.query("year");

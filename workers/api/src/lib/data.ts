@@ -1,5 +1,8 @@
 import type { AttendanceRecord, AttendanceStatus, ClosingDayShift, UserSettings } from "@attendance/shared";
-import { nowIso } from "./db";
+
+export function nowIso(): string {
+  return new Date().toISOString();
+}
 
 interface UserSettingsRow {
   mandatory_office_day_rules: string;
@@ -39,21 +42,27 @@ export async function updateUserSettings(
   userId: string,
   settings: UserSettings,
 ): Promise<void> {
+  // Access認証ではユーザー行の事前作成が無いため、初回保存でも行が作られるようupsertにする
   await db
     .prepare(
-      `UPDATE user_settings
-       SET mandatory_office_day_rules = ?, target_office_rate = ?, closing_day = ?,
-           closing_day_shift = ?, auto_fetch_holidays = ?, updated_at = ?
-       WHERE user_id = ?`,
+      `INSERT INTO user_settings (user_id, mandatory_office_day_rules, target_office_rate, closing_day, closing_day_shift, auto_fetch_holidays, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(user_id) DO UPDATE SET
+         mandatory_office_day_rules = excluded.mandatory_office_day_rules,
+         target_office_rate = excluded.target_office_rate,
+         closing_day = excluded.closing_day,
+         closing_day_shift = excluded.closing_day_shift,
+         auto_fetch_holidays = excluded.auto_fetch_holidays,
+         updated_at = excluded.updated_at`,
     )
     .bind(
+      userId,
       JSON.stringify(settings.mandatoryOfficeDayRules),
       settings.targetOfficeRate,
       settings.closingDay,
       settings.closingDayShift,
       settings.autoFetchHolidays ? 1 : 0,
       nowIso(),
-      userId,
     )
     .run();
 }

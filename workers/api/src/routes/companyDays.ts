@@ -1,13 +1,13 @@
 import { Hono } from "hono";
 import { addCompanyDay, getCompanyHolidays, getCompanyWorkingDays, removeCompanyDay } from "../lib/data";
-import { requireAuth } from "../middleware/requireAuth";
+import { requireAccessAuth } from "../middleware/accessAuth";
 import type { AppEnv } from "../types";
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 function buildCompanyDayRoutes(table: "company_holidays" | "company_working_days") {
   const router = new Hono<AppEnv>();
-  router.use("*", requireAuth);
+  router.use("*", requireAccessAuth);
   const getSet = table === "company_holidays" ? getCompanyHolidays : getCompanyWorkingDays;
 
   router.get("/", async (c) => {

@@ -1,23 +1,12 @@
 import { env, SELF } from "cloudflare:test";
 import { beforeAll, describe, expect, it } from "vitest";
-import migrationSql from "../migrations/0001_init.sql?raw";
+import { authHeaders, generateUntrustedKey, mockAccessCerts, signAccessJwt } from "./helpers/access";
+import { applyMigrations } from "./helpers/migrations";
 
 beforeAll(async () => {
-  const statements = migrationSql
-    .split(";")
-    .map((s: string) => s.trim())
-    .filter(Boolean);
-  for (const statement of statements) {
-    await env.DB.prepare(statement).run();
-  }
+  await applyMigrations(env.DB);
+  await mockAccessCerts();
 });
-
-function extractSessionCookie(res: Response): string {
-  const setCookie = res.headers.get("set-cookie") ?? "";
-  const match = setCookie.match(/session=([^;]+)/);
-  if (!match) throw new Error("session cookieが見つかりません");
-  return match[0];
-}
 
 describe("GET /api/auth/refresh", () => {
   it("認証なしでもトップページへの302を返す(Cloudflare Accessセッション復帰用)", async () => {
@@ -29,134 +18,68 @@ describe("GET /api/auth/refresh", () => {
   });
 });
 
-describe("POST /api/auth/register", () => {
-  it("正しい入力で登録に成功し、セッションCookieが発行される", async () => {
-    const res = await SELF.fetch("http://example.com/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: "alice", password: "password123" }),
+describe("GET /api/auth/me(Access JWT検証)", () => {
+  it("有効なJWTならメールアドレスを返す", async () => {
+    const res = await SELF.fetch("http://example.com/api/auth/me", {
+      headers: await authHeaders("alice@example.com"),
     });
-    expect(res.status).toBe(201);
-    expect(res.headers.get("set-cookie")).toContain("HttpOnly");
-    const body = await res.json();
-    expect(body).toEqual({ userId: "alice" });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ userId: "alice@example.com", email: "alice@example.com" });
   });
 
-  it("IDが不正な形式なら400", async () => {
-    const res = await SELF.fetch("http://example.com/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: "a", password: "password123" }),
+  it("メールアドレスは小文字に正規化される", async () => {
+    const res = await SELF.fetch("http://example.com/api/auth/me", {
+      headers: await authHeaders("Alice@Example.COM"),
     });
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ userId: "alice@example.com", email: "alice@example.com" });
   });
 
-  it("パスワードが短すぎる場合は400", async () => {
-    const res = await SELF.fetch("http://example.com/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: "bob", password: "short" }),
-    });
-    expect(res.status).toBe(400);
-  });
-
-  it("同じIDで再登録すると409", async () => {
-    await SELF.fetch("http://example.com/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: "carol", password: "password123" }),
-    });
-    const res = await SELF.fetch("http://example.com/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: "carol", password: "password123" }),
-    });
-    expect(res.status).toBe(409);
-  });
-});
-
-describe("認証フロー(login/me/logout)", () => {
-  it("register → login → me → logout → me(401) が一通り通る", async () => {
-    await SELF.fetch("http://example.com/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: "dave", password: "password123" }),
-    });
-
-    const loginRes = await SELF.fetch("http://example.com/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: "dave", password: "password123" }),
-    });
-    expect(loginRes.status).toBe(200);
-    const cookie = extractSessionCookie(loginRes);
-
-    const meRes = await SELF.fetch("http://example.com/api/auth/me", {
-      headers: { Cookie: cookie },
-    });
-    expect(meRes.status).toBe(200);
-    expect(await meRes.json()).toEqual({ userId: "dave", email: null });
-
-    const meWithoutCookie = await SELF.fetch("http://example.com/api/auth/me");
-    expect(meWithoutCookie.status).toBe(401);
-
-    const logoutRes = await SELF.fetch("http://example.com/api/auth/logout", {
-      method: "POST",
-      headers: { Cookie: cookie },
-    });
-    expect(logoutRes.status).toBe(200);
-
-    const meAfterLogout = await SELF.fetch("http://example.com/api/auth/me", {
-      headers: { Cookie: cookie },
-    });
-    expect(meAfterLogout.status).toBe(401);
-  });
-
-  it("誤ったパスワードでは401になり、セッションは発行されない", async () => {
-    await SELF.fetch("http://example.com/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: "erin", password: "password123" }),
-    });
-
-    const res = await SELF.fetch("http://example.com/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: "erin", password: "wrongpassword" }),
-    });
+  it("JWTヘッダなしは401", async () => {
+    const res = await SELF.fetch("http://example.com/api/auth/me");
     expect(res.status).toBe(401);
-    expect(res.headers.get("set-cookie")).toBeNull();
   });
 
-  it("存在しないユーザーでのログインも401(存在有無を漏らさない)", async () => {
-    const res = await SELF.fetch("http://example.com/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: "no-such-user", password: "password123" }),
+  it("JWKSに載っていない鍵で署名されたJWTは401", async () => {
+    const untrustedKey = await generateUntrustedKey();
+    const token = await signAccessJwt({ email: "evil@example.com", privateKey: untrustedKey });
+    const res = await SELF.fetch("http://example.com/api/auth/me", {
+      headers: { "Cf-Access-Jwt-Assertion": token },
     });
     expect(res.status).toBe(401);
   });
 
-  it("5回連続で失敗すると429でロックアウトされる", async () => {
-    await SELF.fetch("http://example.com/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: "frank", password: "password123" }),
+  it("audが異なるJWTは401(他のAccessアプリのトークンを拒否)", async () => {
+    const token = await signAccessJwt({ email: "alice@example.com", aud: "other-app-aud" });
+    const res = await SELF.fetch("http://example.com/api/auth/me", {
+      headers: { "Cf-Access-Jwt-Assertion": token },
     });
+    expect(res.status).toBe(401);
+  });
 
-    for (let i = 0; i < 5; i++) {
-      await SELF.fetch("http://example.com/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: "frank", password: "wrongpassword" }),
-      });
-    }
-
-    const res = await SELF.fetch("http://example.com/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: "frank", password: "password123" }),
+  it("issuerが異なるJWTは401", async () => {
+    const token = await signAccessJwt({
+      email: "alice@example.com",
+      iss: "https://evil.cloudflareaccess.com",
     });
-    expect(res.status).toBe(429);
+    const res = await SELF.fetch("http://example.com/api/auth/me", {
+      headers: { "Cf-Access-Jwt-Assertion": token },
+    });
+    expect(res.status).toBe(401);
+  });
+
+  it("期限切れのJWTは401", async () => {
+    const token = await signAccessJwt({ email: "alice@example.com", expiresInSec: -300 });
+    const res = await SELF.fetch("http://example.com/api/auth/me", {
+      headers: { "Cf-Access-Jwt-Assertion": token },
+    });
+    expect(res.status).toBe(401);
+  });
+
+  it("JWT形式でない文字列は401", async () => {
+    const res = await SELF.fetch("http://example.com/api/auth/me", {
+      headers: { "Cf-Access-Jwt-Assertion": "not-a-jwt" },
+    });
+    expect(res.status).toBe(401);
   });
 });

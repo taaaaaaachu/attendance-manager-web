@@ -1,13 +1,13 @@
 import type { ClosingDayShift } from "@attendance/shared";
 import { Hono } from "hono";
 import { getUserSettings, updateUserSettings } from "../lib/data";
-import { requireAuth } from "../middleware/requireAuth";
+import { requireAccessAuth } from "../middleware/accessAuth";
 import type { AppEnv } from "../types";
 
 const CLOSING_DAY_SHIFTS: ClosingDayShift[] = ["none", "previous", "next"];
 
 const settings = new Hono<AppEnv>();
-settings.use("*", requireAuth);
+settings.use("*", requireAccessAuth);
 
 settings.get("/settings", async (c) => {
   const current = await getUserSettings(c.env.DB, c.get("userId"));

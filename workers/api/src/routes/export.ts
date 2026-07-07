@@ -1,10 +1,10 @@
 import { Hono } from "hono";
 import { getAllRecords } from "../lib/data";
-import { requireAuth } from "../middleware/requireAuth";
+import { requireAccessAuth } from "../middleware/accessAuth";
 import type { AppEnv } from "../types";
 
 const exportRoutes = new Hono<AppEnv>();
-exportRoutes.use("*", requireAuth);
+exportRoutes.use("*", requireAccessAuth);
 
 exportRoutes.get("/", async (c) => {
   const start = c.req.query("start");

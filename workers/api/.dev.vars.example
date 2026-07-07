@@ -1,0 +1,4 @@
+# ローカル開発用の環境変数。このファイルを .dev.vars にコピーして使う(.dev.varsはgitignore対象)。
+# wrangler devにはCloudflare Access層がないため、DEV_USER_EMAILで固定ユーザーとして認証をバイパスする。
+# 本番には絶対に設定しないこと(wrangler.jsoncのvarsに書かない)。
+DEV_USER_EMAIL=dev@example.com

@@ -9,11 +9,11 @@ import {
   getUserSettings,
   upsertRecord,
 } from "../lib/data";
-import { requireAuth } from "../middleware/requireAuth";
+import { requireAccessAuth } from "../middleware/accessAuth";
 import type { AppEnv } from "../types";
 
 const schedule = new Hono<AppEnv>();
-schedule.use("*", requireAuth);
+schedule.use("*", requireAccessAuth);
 
 schedule.post("/apply", async (c) => {
   const body = await c.req.json<{

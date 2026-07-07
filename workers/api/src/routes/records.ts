@@ -10,14 +10,14 @@ import {
   getUserSettings,
   upsertRecord,
 } from "../lib/data";
-import { requireAuth } from "../middleware/requireAuth";
+import { requireAccessAuth } from "../middleware/accessAuth";
 import type { AppEnv } from "../types";
 
 const VALID_STATUSES: AttendanceStatus[] = ["office", "remote", "paidleave"];
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 const records = new Hono<AppEnv>();
-records.use("*", requireAuth);
+records.use("*", requireAccessAuth);
 
 function parseOffsetMonths(value: string | undefined): number {
   const n = Number.parseInt(value ?? "0", 10);
