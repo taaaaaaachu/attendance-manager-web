@@ -99,6 +99,8 @@ interface Props {
   companyWorkingDays: ReadonlySet<string>;
   onDayClick: (date: string) => void;
   onDayContextMenu: (date: string, x: number, y: number) => void;
+  /** trueの場合、クリック・右クリックによる編集操作を一切受け付けない(管理者のドリルダウン閲覧用) */
+  readOnly?: boolean;
 }
 
 function monthStartDates(period: Period): Date[] {
@@ -120,6 +122,7 @@ export function CalendarPanel({
   companyWorkingDays,
   onDayClick,
   onDayContextMenu,
+  readOnly = false,
 }: Props) {
   const months = monthStartDates(period);
   const [pulseBright, setPulseBright] = useState(false);
@@ -155,8 +158,8 @@ export function CalendarPanel({
                 <>
                   {status && <span className="tile-status-emoji">{STATUS_EMOJI[status]}</span>}
                   <TileInteractionLayer
-                    clickable={isWithinPeriod && !holiday}
-                    contextMenuEnabled={isWithinPeriod}
+                    clickable={!readOnly && isWithinPeriod && !holiday}
+                    contextMenuEnabled={!readOnly && isWithinPeriod}
                     onDayClick={() => onDayClick(dateStr)}
                     onDayContextMenu={(x, y) => onDayContextMenu(dateStr, x, y)}
                   />

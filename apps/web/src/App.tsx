@@ -182,6 +182,7 @@ export default function App() {
         onOpenSchedule={() => setOpenModal("schedule")}
         onOpenExport={() => setOpenModal("export")}
         onOpenSettings={() => setOpenModal("settings")}
+        isAdmin={user.isAdmin}
       />
 
       <main className="app-main">

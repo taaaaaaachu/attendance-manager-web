@@ -1,0 +1,59 @@
+.admin-threshold-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  width: 100%;
+  max-width: 1100px;
+}
+
+.admin-threshold-form input {
+  width: 80px;
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.admin-user-table {
+  width: 100%;
+  max-width: 1100px;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.admin-user-table th,
+.admin-user-table td {
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 13px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.admin-user-row {
+  cursor: pointer;
+}
+
+.admin-user-row:hover {
+  background: #f9fafb;
+}
+
+.admin-detail-modal {
+  width: min(900px, calc(100vw - 32px));
+}
+
+.admin-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.admin-detail-header h2 {
+  margin: 0;
+  font-size: 16px;
+  word-break: break-all;
+}

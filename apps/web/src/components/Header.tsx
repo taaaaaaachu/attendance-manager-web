@@ -5,9 +5,18 @@ interface Props {
   onOpenSchedule: () => void;
   onOpenExport: () => void;
   onOpenSettings: () => void;
+  isAdmin?: boolean;
 }
 
-export function Header({ onPrevMonth, onNextMonth, onToday, onOpenSchedule, onOpenExport, onOpenSettings }: Props) {
+export function Header({
+  onPrevMonth,
+  onNextMonth,
+  onToday,
+  onOpenSchedule,
+  onOpenExport,
+  onOpenSettings,
+  isAdmin = false,
+}: Props) {
   return (
     <header className="app-header">
       <div className="app-header-inner">
@@ -33,6 +42,7 @@ export function Header({ onPrevMonth, onNextMonth, onToday, onOpenSchedule, onOp
           <button type="button" onClick={onOpenSettings}>
             設定
           </button>
+          {isAdmin && <a href="/admin">管理画面</a>}
         </div>
       </div>
     </header>

@@ -3,6 +3,7 @@ import { apiFetch, navigation } from "./client";
 export interface CurrentUser {
   userId: string;
   email: string | null;
+  isAdmin: boolean;
 }
 
 /** Cloudflare Accessで認証済みのユーザー情報(メールアドレス)を取得する */

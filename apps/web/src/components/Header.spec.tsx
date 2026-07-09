@@ -42,4 +42,16 @@ describe("Header", () => {
     expect(onPrevMonth).toHaveBeenCalledTimes(1);
     expect(onNextMonth).toHaveBeenCalledTimes(1);
   });
+
+  it("管理者でなければ「管理画面」リンクは表示されない", () => {
+    renderHeader();
+    expect(screen.queryByText("管理画面")).not.toBeInTheDocument();
+  });
+
+  it("管理者には/adminへの「管理画面」リンクが表示される", () => {
+    renderHeader({ isAdmin: true });
+    const link = screen.getByText("管理画面");
+    expect(link).toBeInstanceOf(HTMLAnchorElement);
+    expect(link).toHaveAttribute("href", "/admin");
+  });
 });

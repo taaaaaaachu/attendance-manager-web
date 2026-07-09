@@ -16,7 +16,7 @@ function renderModal(overrides: Partial<Parameters<typeof SettingsModal>[0]> = {
   const onAddCompanyWorkingDay = vi.fn().mockResolvedValue(undefined);
   const utils = render(
     <SettingsModal
-      user={{ userId: "testuser", email: null }}
+      user={{ userId: "testuser", email: null, isAdmin: false }}
       settings={SETTINGS}
       holidays={new Set(["2026-02-11"])} // 建国記念の日(水曜)
       companyHolidays={[]}
