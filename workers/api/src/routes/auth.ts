@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { requireAccessAuth } from "../middleware/accessAuth";
+import { isAdminEmail } from "../middleware/adminAuth";
 import type { AppEnv } from "../types";
 
 const auth = new Hono<AppEnv>();
@@ -14,7 +15,7 @@ auth.get("/refresh", (c) => {
 
 auth.get("/me", requireAccessAuth, (c) => {
   const email = c.get("userId");
-  return c.json({ userId: email, email });
+  return c.json({ userId: email, email, isAdmin: isAdminEmail(c.env.ADMIN_EMAILS, email) });
 });
 
 export { auth as authRoutes };

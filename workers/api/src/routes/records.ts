@@ -1,15 +1,7 @@
 import type { AttendanceStatus } from "@attendance/shared";
-import { calculateStats, formatDate, getPeriodForMonthOffset } from "@attendance/shared";
 import { Hono } from "hono";
-import {
-  deleteRecord,
-  getAllRecords,
-  getCompanyHolidays,
-  getCompanyWorkingDays,
-  getJapanHolidays,
-  getUserSettings,
-  upsertRecord,
-} from "../lib/data";
+import { deleteRecord, getAllRecords, upsertRecord } from "../lib/data";
+import { loadPeriodContext, loadStatsForUser } from "../lib/period";
 import { requireAccessAuth } from "../middleware/accessAuth";
 import type { AppEnv } from "../types";
 
@@ -60,26 +52,6 @@ records.delete("/records/:date", async (c) => {
   return c.json({ ok: true });
 });
 
-async function loadPeriodContext(db: D1Database, userId: string, offsetMonths: number) {
-  const settings = await getUserSettings(db, userId);
-  const [companyHolidays, companyWorkingDays, japanHolidays] = await Promise.all([
-    getCompanyHolidays(db, userId),
-    getCompanyWorkingDays(db, userId),
-    getJapanHolidays(db),
-  ]);
-  const today = formatDate(new Date());
-  const period = getPeriodForMonthOffset(
-    today,
-    offsetMonths,
-    settings.closingDay,
-    settings.closingDayShift,
-    japanHolidays,
-    companyHolidays,
-    companyWorkingDays,
-  );
-  return { settings, companyHolidays, companyWorkingDays, japanHolidays, today, period };
-}
-
 records.get("/period", async (c) => {
   const offsetMonths = parseOffsetMonths(c.req.query("offsetMonths"));
   const { period } = await loadPeriodContext(c.env.DB, c.get("userId"), offsetMonths);
@@ -87,22 +59,8 @@ records.get("/period", async (c) => {
 });
 
 records.get("/stats", async (c) => {
-  const userId = c.get("userId");
   const offsetMonths = parseOffsetMonths(c.req.query("offsetMonths"));
-  const { settings, companyHolidays, companyWorkingDays, japanHolidays, today, period } =
-    await loadPeriodContext(c.env.DB, userId, offsetMonths);
-  const allRecords = await getAllRecords(c.env.DB, userId);
-
-  const stats = calculateStats(
-    allRecords,
-    period,
-    japanHolidays,
-    companyHolidays,
-    companyWorkingDays,
-    settings.targetOfficeRate,
-    today,
-  );
-
+  const { stats } = await loadStatsForUser(c.env.DB, c.get("userId"), offsetMonths);
   return c.json(stats);
 });
 

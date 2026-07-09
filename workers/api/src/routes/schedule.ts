@@ -1,14 +1,8 @@
 import type { AttendanceRecord, AttendanceStatus } from "@attendance/shared";
-import { calculateStats, formatDate, getBusinessDays, getPeriodForMonthOffset, getWeekday } from "@attendance/shared";
+import { calculateStats, getBusinessDays, getWeekday } from "@attendance/shared";
 import { Hono } from "hono";
-import {
-  getAllRecords,
-  getCompanyHolidays,
-  getCompanyWorkingDays,
-  getJapanHolidays,
-  getUserSettings,
-  upsertRecord,
-} from "../lib/data";
+import { getAllRecords, upsertRecord } from "../lib/data";
+import { loadPeriodContext } from "../lib/period";
 import { requireAccessAuth } from "../middleware/accessAuth";
 import type { AppEnv } from "../types";
 
@@ -25,24 +19,11 @@ schedule.post("/apply", async (c) => {
   const offsetMonths = body.offsetMonths ?? 0;
   const userId = c.get("userId");
 
-  const settings = await getUserSettings(c.env.DB, userId);
-  const [companyHolidays, companyWorkingDays, japanHolidays, existingRecords] = await Promise.all([
-    getCompanyHolidays(c.env.DB, userId),
-    getCompanyWorkingDays(c.env.DB, userId),
-    getJapanHolidays(c.env.DB),
-    getAllRecords(c.env.DB, userId),
-  ]);
-
-  const today = formatDate(new Date());
-  const period = getPeriodForMonthOffset(
-    today,
-    offsetMonths,
-    settings.closingDay,
-    settings.closingDayShift,
-    japanHolidays,
-    companyHolidays,
-    companyWorkingDays,
-  );
+  const [{ settings, companyHolidays, companyWorkingDays, japanHolidays, today, period }, existingRecords] =
+    await Promise.all([
+      loadPeriodContext(c.env.DB, userId, offsetMonths),
+      getAllRecords(c.env.DB, userId),
+    ]);
   const businessDays = getBusinessDays(period, japanHolidays, companyHolidays, companyWorkingDays);
 
   // 既に有給休暇が設定されている日は上書きしない

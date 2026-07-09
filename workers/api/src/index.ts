@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { adminRoutes } from "./routes/admin";
 import { attendanceRoutes } from "./routes/attendance";
 import { authRoutes } from "./routes/auth";
 import { companyHolidayRoutes, companyWorkingDayRoutes } from "./routes/companyDays";
@@ -27,5 +28,6 @@ app.route("/api/holidays", holidayRoutes);
 app.route("/api/schedule", scheduleRoutes);
 app.route("/api/attendance", attendanceRoutes);
 app.route("/api/export", exportRoutes);
+app.route("/api/admin", adminRoutes);
 
 export default app;

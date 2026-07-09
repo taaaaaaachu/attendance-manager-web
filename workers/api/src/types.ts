@@ -10,6 +10,8 @@ export interface Bindings {
    * 認証をバイパスするためのもので、本番では設定しないこと。
    */
   DEV_USER_EMAIL?: string;
+  /** 管理者のメールアドレス(カンマ区切り)。ロールを持つテーブルが無いため設定値で判定する */
+  ADMIN_EMAILS: string;
 }
 
 export interface Variables {

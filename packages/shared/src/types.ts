@@ -29,3 +29,24 @@ export interface UserSettings {
   closingDayShift: ClosingDayShift;
   autoFetchHolidays: boolean;
 }
+
+// 管理者画面: 全ユーザー一覧の各行(ユーザー自身の締め日設定に基づく現在の期間で集計)
+export interface AdminUserSummary {
+  userId: string;
+  closingDay: number;
+  closingDayShift: ClosingDayShift;
+  targetOfficeRate: number;
+  period: Period;
+  stats: AttendanceStats;
+}
+
+// 管理者画面: 特定ユーザーのドリルダウン(読み取り専用の記録閲覧用)
+export interface AdminUserDetail {
+  userId: string;
+  period: Period;
+  records: AttendanceRecord[];
+  companyHolidays: string[];
+  companyWorkingDays: string[];
+  settings: UserSettings;
+  stats: AttendanceStats;
+}

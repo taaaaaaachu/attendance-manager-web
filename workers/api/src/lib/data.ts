@@ -122,6 +122,14 @@ export async function deleteAllRecords(db: D1Database, userId: string): Promise<
   await db.prepare("DELETE FROM attendance_records WHERE user_id = ?").bind(userId).run();
 }
 
+/** 勤怠記録を1件以上持つ全ユーザーのIDを返す(users テーブルが無いためこれを正とする) */
+export async function getAllUserIds(db: D1Database): Promise<string[]> {
+  const { results } = await db
+    .prepare("SELECT DISTINCT user_id FROM attendance_records ORDER BY user_id")
+    .all<{ user_id: string }>();
+  return results.map((r) => r.user_id);
+}
+
 async function getDateSet(
   db: D1Database,
   table: "company_holidays" | "company_working_days",

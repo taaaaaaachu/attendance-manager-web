@@ -1,15 +1,11 @@
-import { formatDate, getPeriodForMonthOffset } from "@attendance/shared";
 import { Hono } from "hono";
 import {
   deleteAllCompanyDays,
   deleteAllRecords,
   deleteCompanyDaysInRange,
   deleteRecordsInRange,
-  getCompanyHolidays,
-  getCompanyWorkingDays,
-  getJapanHolidays,
-  getUserSettings,
 } from "../lib/data";
+import { loadPeriodContext } from "../lib/period";
 import { requireAccessAuth } from "../middleware/accessAuth";
 import type { AppEnv } from "../types";
 
@@ -27,22 +23,7 @@ attendance.post("/reset", async (c) => {
     return c.json({ ok: true, scope: "all" });
   }
 
-  const settings = await getUserSettings(c.env.DB, userId);
-  const [companyHolidays, companyWorkingDays, japanHolidays] = await Promise.all([
-    getCompanyHolidays(c.env.DB, userId),
-    getCompanyWorkingDays(c.env.DB, userId),
-    getJapanHolidays(c.env.DB),
-  ]);
-  const today = formatDate(new Date());
-  const period = getPeriodForMonthOffset(
-    today,
-    body.offsetMonths ?? 0,
-    settings.closingDay,
-    settings.closingDayShift,
-    japanHolidays,
-    companyHolidays,
-    companyWorkingDays,
-  );
+  const { period } = await loadPeriodContext(c.env.DB, userId, body.offsetMonths ?? 0);
 
   await deleteRecordsInRange(c.env.DB, userId, period.startDate, period.endDate);
   await deleteCompanyDaysInRange(c.env.DB, "company_holidays", userId, period.startDate, period.endDate);

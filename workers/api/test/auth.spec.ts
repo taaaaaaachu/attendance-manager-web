@@ -24,7 +24,11 @@ describe("GET /api/auth/me(Access JWT検証)", () => {
       headers: await authHeaders("alice@example.com"),
     });
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ userId: "alice@example.com", email: "alice@example.com" });
+    expect(await res.json()).toEqual({
+      userId: "alice@example.com",
+      email: "alice@example.com",
+      isAdmin: false,
+    });
   });
 
   it("メールアドレスは小文字に正規化される", async () => {
@@ -32,7 +36,20 @@ describe("GET /api/auth/me(Access JWT検証)", () => {
       headers: await authHeaders("Alice@Example.COM"),
     });
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ userId: "alice@example.com", email: "alice@example.com" });
+    expect(await res.json()).toEqual({
+      userId: "alice@example.com",
+      email: "alice@example.com",
+      isAdmin: false,
+    });
+  });
+
+  it("ADMIN_EMAILSに含まれるメールアドレスはisAdmin: trueになる", async () => {
+    const adminEmail = env.ADMIN_EMAILS.split(",")[0];
+    const res = await SELF.fetch("http://example.com/api/auth/me", {
+      headers: await authHeaders(adminEmail),
+    });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ userId: adminEmail, email: adminEmail, isAdmin: true });
   });
 
   it("JWTヘッダなしは401", async () => {
