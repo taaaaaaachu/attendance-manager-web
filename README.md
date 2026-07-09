@@ -145,6 +145,16 @@ cd workers/api && pnpm test
   `/api/auth/refresh` へのトップレベル遷移で自動復帰する(`apps/web/src/api/client.ts`)。
 - ログアウトは `/cdn-cgi/access/logout` への遷移で行う。
 
+## 管理者機能(/admin)
+
+`workers/api/wrangler.jsonc` の `vars.ADMIN_EMAILS`(カンマ区切りのメールアドレス)に
+含まれるユーザーだけが `/admin` ページを利用できる。ロールを持つテーブルは無く、この設定値のみで判定する。
+
+- 全ユーザー(`attendance_records` に1件以上記録があるメールアドレス)の出社率統計一覧、
+  期間ナビゲーション、指定した出社率を下回るユーザーの抽出ができる。
+- ユーザー行をクリックすると、そのユーザーのカレンダー・統計を閲覧できる(読み取り専用、編集不可)。
+- 詳細は [docs/adr/0001-admin-feature.md](docs/adr/0001-admin-feature.md) を参照。
+
 ## 既知の制約・今後の課題
 
 - PNG画像エクスポート(html2canvasを使った期間カレンダーの画像化)は未実装。JSONエクスポートのみ対応。
