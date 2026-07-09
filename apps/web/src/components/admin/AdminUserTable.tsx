@@ -1,4 +1,4 @@
-import type { AdminUserSummary, ClosingDayShift } from "@attendance/shared";
+import type { AdminUserSummary, ClosingDayShift, Period } from "@attendance/shared";
 
 const CLOSING_DAY_SHIFT_LABEL: Record<ClosingDayShift, string> = {
   none: "そのまま",
@@ -8,6 +8,15 @@ const CLOSING_DAY_SHIFT_LABEL: Record<ClosingDayShift, string> = {
 
 function closingDayLabel(closingDay: number): string {
   return closingDay === 0 ? "月末" : `${closingDay}日`;
+}
+
+/** "2026-07-15" → "2026/07/15"。集計期間はユーザー間で年跨ぎもあるため両端に年を出す */
+function formatPeriodDate(dateStr: string): string {
+  return dateStr.replace(/-/g, "/");
+}
+
+function periodLabel(period: Period): string {
+  return `${formatPeriodDate(period.startDate)} 〜 ${formatPeriodDate(period.endDate)}`;
 }
 
 interface Props {
@@ -26,6 +35,7 @@ export function AdminUserTable({ users, onSelectUser }: Props) {
         <tr>
           <th>ユーザー</th>
           <th>締め日</th>
+          <th>集計期間</th>
           <th>出社率</th>
           <th>出社日数</th>
           <th>在宅日数</th>
@@ -39,6 +49,7 @@ export function AdminUserTable({ users, onSelectUser }: Props) {
             <td>
               {closingDayLabel(u.closingDay)}({CLOSING_DAY_SHIFT_LABEL[u.closingDayShift]})
             </td>
+            <td className="admin-period-cell">{periodLabel(u.period)}</td>
             <td>{(u.stats.officeRate * 100).toFixed(1)}%</td>
             <td>{u.stats.officeDays}日</td>
             <td>{u.stats.remoteDays}日</td>
