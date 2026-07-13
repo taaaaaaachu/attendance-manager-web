@@ -7,7 +7,7 @@
 
 - **Cloudflare Workers**: 単一WorkerでAPI(Hono)とフロントエンド静的アセットを両方配信
 - **Cloudflare Access**: 認証層。Accessで認証されたメールアドレスがそのままアプリのユーザーIDになる
-- **Cloudflare D1**: データストア(attendance_records / company_holidays / company_working_days / user_settings / japan_holidays)
+- **Cloudflare D1**: データストア(全テーブルのER図は [docs/db-schema.md](docs/db-schema.md) を参照)
 - **React 19 + Vite**: フロントエンド(`apps/web`)
 - **TypeScript**: 期間計算・営業日判定・統計計算ロジック(`packages/shared`)、デスクトップ版のRust実装を参照して独自に実装
 
