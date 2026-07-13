@@ -3,6 +3,17 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { SettingsModal } from "./SettingsModal";
 
+// SettingsModal内のAccountLinkSectionがマウント時に叩く連携APIは、このテストの対象外なのでモックする
+vi.mock("../../api/links", () => ({
+  getLinkState: vi.fn().mockResolvedValue({ members: [], owner: null, incoming: [], outgoing: [] }),
+  sendLinkRequest: vi.fn(),
+  cancelLinkRequest: vi.fn(),
+  acceptLinkRequest: vi.fn(),
+  rejectLinkRequest: vi.fn(),
+  removeMember: vi.fn(),
+  leaveLink: vi.fn(),
+}));
+
 const SETTINGS: UserSettings = {
   targetOfficeRate: 50,
   closingDay: 15,
@@ -16,7 +27,7 @@ function renderModal(overrides: Partial<Parameters<typeof SettingsModal>[0]> = {
   const onAddCompanyWorkingDay = vi.fn().mockResolvedValue(undefined);
   const utils = render(
     <SettingsModal
-      user={{ userId: "testuser", email: null, isAdmin: false }}
+      user={{ userId: "testuser", email: null, isAdmin: false, linkedTo: null, incomingRequestCount: 0 }}
       settings={SETTINGS}
       holidays={new Set(["2026-02-11"])} // 建国記念の日(水曜)
       companyHolidays={[]}
@@ -31,6 +42,7 @@ function renderModal(overrides: Partial<Parameters<typeof SettingsModal>[0]> = {
       onFetchHolidays={vi.fn().mockResolvedValue(undefined)}
       onResetPeriod={vi.fn().mockResolvedValue(undefined)}
       onResetAll={vi.fn().mockResolvedValue(undefined)}
+      onLinkChanged={vi.fn()}
       {...overrides}
     />,
   );

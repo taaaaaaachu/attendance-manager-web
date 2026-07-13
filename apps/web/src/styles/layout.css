@@ -91,6 +91,27 @@
   box-sizing: border-box;
 }
 
+/* アカウント連携でメンバーとしてログイン中(他アカウントのカレンダーを共有表示中)の帯 */
+.link-banner {
+  width: 100%;
+  box-sizing: border-box;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e40af;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  text-align: center;
+}
+
+/* 設定ボタンに付く「連携申請あり」バッジ */
+.app-header .badge {
+  color: #dc2626;
+  margin-left: 4px;
+  font-size: 10px;
+  vertical-align: middle;
+}
+
 .stats-panel {
   min-width: 220px;
   background: #fff;

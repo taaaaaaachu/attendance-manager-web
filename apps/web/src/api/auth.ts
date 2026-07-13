@@ -4,6 +4,10 @@ export interface CurrentUser {
   userId: string;
   email: string | null;
   isAdmin: boolean;
+  /** 連携メンバーとしてログイン中なら共有カレンダー所有者のメール、そうでなければ null */
+  linkedTo: string | null;
+  /** 自分宛の未承認の連携申請の件数(設定ボタンのバッジ用) */
+  incomingRequestCount: number;
 }
 
 /** Cloudflare Accessで認証済みのユーザー情報(メールアドレス)を取得する */

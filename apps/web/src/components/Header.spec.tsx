@@ -54,4 +54,22 @@ describe("Header", () => {
     expect(link).toBeInstanceOf(HTMLAnchorElement);
     expect(link).toHaveAttribute("href", "/admin");
   });
+
+  it("settingsBadgeがtrueのとき設定ボタンに連携申請バッジが表示される", () => {
+    const { rerender } = renderHeader();
+    expect(screen.queryByLabelText("連携申請あり")).not.toBeInTheDocument();
+
+    rerender(
+      <Header
+        onPrevMonth={vi.fn()}
+        onNextMonth={vi.fn()}
+        onToday={vi.fn()}
+        onOpenSchedule={vi.fn()}
+        onOpenExport={vi.fn()}
+        onOpenSettings={vi.fn()}
+        settingsBadge
+      />,
+    );
+    expect(screen.getByLabelText("連携申請あり")).toBeInTheDocument();
+  });
 });

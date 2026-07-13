@@ -100,6 +100,16 @@ export default function App() {
     logout();
   };
 
+  // アカウント連携が変わると解決先カレンダーが切り替わるため、ユーザー情報を取り直して
+  // カレンダー全体(設定・会社日・期間データ)を再読み込みする。
+  const reloadUser = useCallback(async () => {
+    try {
+      setUser(await fetchCurrentUser());
+    } catch {
+      setUser(null);
+    }
+  }, []);
+
   const applyStatus = async (date: string, status: AttendanceStatus | "clear") => {
     try {
       if (status === "clear") {
@@ -183,9 +193,15 @@ export default function App() {
         onOpenExport={() => setOpenModal("export")}
         onOpenSettings={() => setOpenModal("settings")}
         isAdmin={user.isAdmin}
+        settingsBadge={user.incomingRequestCount > 0}
       />
 
       <main className="app-main">
+        {user.linkedTo && (
+          <div className="link-banner">
+            {user.linkedTo} のカレンダーを共有表示中です(あなた自身のデータは連携中は表示されません)。
+          </div>
+        )}
         <StatsPanel stats={stats} />
         {period && (
           <CalendarPanel
@@ -273,6 +289,7 @@ export default function App() {
             setCompanyWorkingDays(await getCompanyWorkingDays());
             await loadPeriodData();
           }}
+          onLinkChanged={reloadUser}
         />
       )}
 

@@ -2,6 +2,7 @@ import type { UserSettings } from "@attendance/shared";
 import { isBaseHoliday } from "@attendance/shared";
 import { useState } from "react";
 import type { CurrentUser } from "../../api/auth";
+import { AccountLinkSection } from "./AccountLinkSection";
 import { AlertDialog } from "./AlertDialog";
 import { ConfirmDialog } from "./ConfirmDialog";
 
@@ -21,6 +22,8 @@ interface Props {
   onFetchHolidays: () => Promise<void>;
   onResetPeriod: () => Promise<void>;
   onResetAll: () => Promise<void>;
+  /** アカウント連携が変化したとき、カレンダー全体を再読み込みするための通知 */
+  onLinkChanged: () => void | Promise<void>;
 }
 
 export function SettingsModal(props: Props) {
@@ -67,6 +70,8 @@ export function SettingsModal(props: Props) {
           <label>ログイン中のID</label>
           <div>{props.user.userId}</div>
         </div>
+
+        <AccountLinkSection onChanged={props.onLinkChanged} />
 
         <div className="field">
           <label>目標出社率(%)</label>

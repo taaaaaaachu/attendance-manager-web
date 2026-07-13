@@ -6,6 +6,8 @@ interface Props {
   onOpenExport: () => void;
   onOpenSettings: () => void;
   isAdmin?: boolean;
+  /** 未承認の連携申請があるとき、設定ボタンにバッジを表示する */
+  settingsBadge?: boolean;
 }
 
 export function Header({
@@ -16,6 +18,7 @@ export function Header({
   onOpenExport,
   onOpenSettings,
   isAdmin = false,
+  settingsBadge = false,
 }: Props) {
   return (
     <header className="app-header">
@@ -40,7 +43,7 @@ export function Header({
             エクスポート
           </button>
           <button type="button" onClick={onOpenSettings}>
-            設定
+            設定{settingsBadge && <span className="badge" aria-label="連携申請あり">●</span>}
           </button>
           {isAdmin && <a href="/admin">管理画面</a>}
         </div>
