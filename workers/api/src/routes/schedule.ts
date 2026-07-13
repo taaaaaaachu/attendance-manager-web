@@ -4,10 +4,11 @@ import { Hono } from "hono";
 import { getAllRecords, upsertRecord } from "../lib/data";
 import { loadPeriodContext } from "../lib/period";
 import { requireAccessAuth } from "../middleware/accessAuth";
+import { withCalendarOwner } from "../middleware/calendarOwner";
 import type { AppEnv } from "../types";
 
 const schedule = new Hono<AppEnv>();
-schedule.use("*", requireAccessAuth);
+schedule.use("*", requireAccessAuth, withCalendarOwner);
 
 schedule.post("/apply", async (c) => {
   const body = await c.req.json<{
@@ -17,7 +18,7 @@ schedule.post("/apply", async (c) => {
   }>();
   const remoteWeekdays = new Set(body.remoteWeekdays ?? []);
   const offsetMonths = body.offsetMonths ?? 0;
-  const userId = c.get("userId");
+  const userId = c.get("calendarOwnerId");
 
   const [{ settings, companyHolidays, companyWorkingDays, japanHolidays, today, period }, existingRecords] =
     await Promise.all([

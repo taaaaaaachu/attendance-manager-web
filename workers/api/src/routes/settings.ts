@@ -2,15 +2,16 @@ import type { ClosingDayShift } from "@attendance/shared";
 import { Hono } from "hono";
 import { getUserSettings, updateUserSettings } from "../lib/data";
 import { requireAccessAuth } from "../middleware/accessAuth";
+import { withCalendarOwner } from "../middleware/calendarOwner";
 import type { AppEnv } from "../types";
 
 const CLOSING_DAY_SHIFTS: ClosingDayShift[] = ["none", "previous", "next"];
 
 const settings = new Hono<AppEnv>();
-settings.use("*", requireAccessAuth);
+settings.use("*", requireAccessAuth, withCalendarOwner);
 
 settings.get("/settings", async (c) => {
-  const current = await getUserSettings(c.env.DB, c.get("userId"));
+  const current = await getUserSettings(c.env.DB, c.get("calendarOwnerId"));
   return c.json(current);
 });
 
@@ -23,7 +24,7 @@ settings.put("/settings", async (c) => {
     autoFetchHolidays?: boolean;
   }>();
 
-  const current = await getUserSettings(c.env.DB, c.get("userId"));
+  const current = await getUserSettings(c.env.DB, c.get("calendarOwnerId"));
 
   if (body.mandatoryOfficeDayRules !== undefined) {
     if (
@@ -51,7 +52,7 @@ settings.put("/settings", async (c) => {
     autoFetchHolidays: body.autoFetchHolidays ?? current.autoFetchHolidays,
   };
 
-  await updateUserSettings(c.env.DB, c.get("userId"), updated);
+  await updateUserSettings(c.env.DB, c.get("calendarOwnerId"), updated);
   return c.json(updated);
 });
 

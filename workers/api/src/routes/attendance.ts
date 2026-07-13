@@ -7,14 +7,15 @@ import {
 } from "../lib/data";
 import { loadPeriodContext } from "../lib/period";
 import { requireAccessAuth } from "../middleware/accessAuth";
+import { withCalendarOwner } from "../middleware/calendarOwner";
 import type { AppEnv } from "../types";
 
 const attendance = new Hono<AppEnv>();
-attendance.use("*", requireAccessAuth);
+attendance.use("*", requireAccessAuth, withCalendarOwner);
 
 attendance.post("/reset", async (c) => {
   const body = await c.req.json<{ scope?: "period" | "all"; offsetMonths?: number }>();
-  const userId = c.get("userId");
+  const userId = c.get("calendarOwnerId");
 
   if (body.scope === "all") {
     await deleteAllRecords(c.env.DB, userId);

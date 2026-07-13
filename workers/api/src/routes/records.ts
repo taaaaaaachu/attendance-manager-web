@@ -3,13 +3,14 @@ import { Hono } from "hono";
 import { deleteRecord, getAllRecords, upsertRecord } from "../lib/data";
 import { loadPeriodContext, loadStatsForUser } from "../lib/period";
 import { requireAccessAuth } from "../middleware/accessAuth";
+import { withCalendarOwner } from "../middleware/calendarOwner";
 import type { AppEnv } from "../types";
 
 const VALID_STATUSES: AttendanceStatus[] = ["office", "remote", "paidleave"];
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 const records = new Hono<AppEnv>();
-records.use("*", requireAccessAuth);
+records.use("*", requireAccessAuth, withCalendarOwner);
 
 function parseOffsetMonths(value: string | undefined): number {
   const n = Number.parseInt(value ?? "0", 10);
@@ -17,7 +18,7 @@ function parseOffsetMonths(value: string | undefined): number {
 }
 
 records.get("/records", async (c) => {
-  const userId = c.get("userId");
+  const userId = c.get("calendarOwnerId");
   const all = await getAllRecords(c.env.DB, userId);
   const start = c.req.query("start");
   const end = c.req.query("end");
@@ -39,7 +40,7 @@ records.put("/records/:date", async (c) => {
     return c.json({ error: `statusは${VALID_STATUSES.join("/")}のいずれかにしてください` }, 400);
   }
 
-  await upsertRecord(c.env.DB, c.get("userId"), date, body.status as AttendanceStatus);
+  await upsertRecord(c.env.DB, c.get("calendarOwnerId"), date, body.status as AttendanceStatus);
   return c.json({ date, status: body.status });
 });
 
@@ -48,19 +49,19 @@ records.delete("/records/:date", async (c) => {
   if (!DATE_PATTERN.test(date)) {
     return c.json({ error: "日付はYYYY-MM-DD形式で指定してください" }, 400);
   }
-  await deleteRecord(c.env.DB, c.get("userId"), date);
+  await deleteRecord(c.env.DB, c.get("calendarOwnerId"), date);
   return c.json({ ok: true });
 });
 
 records.get("/period", async (c) => {
   const offsetMonths = parseOffsetMonths(c.req.query("offsetMonths"));
-  const { period } = await loadPeriodContext(c.env.DB, c.get("userId"), offsetMonths);
+  const { period } = await loadPeriodContext(c.env.DB, c.get("calendarOwnerId"), offsetMonths);
   return c.json(period);
 });
 
 records.get("/stats", async (c) => {
   const offsetMonths = parseOffsetMonths(c.req.query("offsetMonths"));
-  const { stats } = await loadStatsForUser(c.env.DB, c.get("userId"), offsetMonths);
+  const { stats } = await loadStatsForUser(c.env.DB, c.get("calendarOwnerId"), offsetMonths);
   return c.json(stats);
 });
 

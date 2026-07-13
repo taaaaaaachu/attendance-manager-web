@@ -28,6 +28,8 @@ describe("GET /api/auth/me(Access JWT検証)", () => {
       userId: "alice@example.com",
       email: "alice@example.com",
       isAdmin: false,
+      linkedTo: null,
+      incomingRequestCount: 0,
     });
   });
 
@@ -40,6 +42,8 @@ describe("GET /api/auth/me(Access JWT検証)", () => {
       userId: "alice@example.com",
       email: "alice@example.com",
       isAdmin: false,
+      linkedTo: null,
+      incomingRequestCount: 0,
     });
   });
 
@@ -49,7 +53,13 @@ describe("GET /api/auth/me(Access JWT検証)", () => {
       headers: await authHeaders(adminEmail),
     });
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ userId: adminEmail, email: adminEmail, isAdmin: true });
+    expect(await res.json()).toEqual({
+      userId: adminEmail,
+      email: adminEmail,
+      isAdmin: true,
+      linkedTo: null,
+      incomingRequestCount: 0,
+    });
   });
 
   it("JWTヘッダなしは401", async () => {

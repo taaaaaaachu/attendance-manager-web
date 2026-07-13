@@ -5,6 +5,7 @@ import { authRoutes } from "./routes/auth";
 import { companyHolidayRoutes, companyWorkingDayRoutes } from "./routes/companyDays";
 import { exportRoutes } from "./routes/export";
 import { holidayRoutes } from "./routes/holidays";
+import { linkRoutes } from "./routes/links";
 import { recordRoutes } from "./routes/records";
 import { scheduleRoutes } from "./routes/schedule";
 import { settingsRoutes } from "./routes/settings";
@@ -29,5 +30,6 @@ app.route("/api/schedule", scheduleRoutes);
 app.route("/api/attendance", attendanceRoutes);
 app.route("/api/export", exportRoutes);
 app.route("/api/admin", adminRoutes);
+app.route("/api/links", linkRoutes);
 
 export default app;

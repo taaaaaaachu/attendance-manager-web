@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { countIncomingRequests, resolveCalendarOwner } from "../lib/links";
 import { requireAccessAuth } from "../middleware/accessAuth";
 import { isAdminEmail } from "../middleware/adminAuth";
 import type { AppEnv } from "../types";
@@ -13,9 +14,20 @@ auth.get("/refresh", (c) => {
   return c.redirect("/", 302);
 });
 
-auth.get("/me", requireAccessAuth, (c) => {
+auth.get("/me", requireAccessAuth, async (c) => {
   const email = c.get("userId");
-  return c.json({ userId: email, email, isAdmin: isAdminEmail(c.env.ADMIN_EMAILS, email) });
+  const [owner, incomingRequestCount] = await Promise.all([
+    resolveCalendarOwner(c.env.DB, email),
+    countIncomingRequests(c.env.DB, email),
+  ]);
+  return c.json({
+    userId: email,
+    email,
+    isAdmin: isAdminEmail(c.env.ADMIN_EMAILS, email),
+    // 連携メンバーとしてログイン中なら共有カレンダー所有者のメール、そうでなければ null
+    linkedTo: owner === email ? null : owner,
+    incomingRequestCount,
+  });
 });
 
 export { auth as authRoutes };
