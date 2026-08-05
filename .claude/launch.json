@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "web",
+      "runtimeExecutable": "C:\\Users\\you\\AppData\\Local\\mise\\shims\\pnpm.exe",
+      "runtimeArgs": ["--filter", "@attendance/web", "run", "dev"],
+      "port": 5173
+    },
+    {
+      "name": "api",
+      "runtimeExecutable": "C:\\Users\\you\\AppData\\Local\\mise\\shims\\pnpm.exe",
+      "runtimeArgs": ["--filter", "@attendance/api", "run", "dev"],
+      "port": 8787
+    }
+  ]
+}
