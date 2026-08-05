@@ -50,7 +50,9 @@ describe("AdminUserDetailPanel", () => {
   it("削除確認ダイアログはユーザーIDが完全一致するまで削除できない", () => {
     render(<AdminUserDetailPanel detail={DETAIL} holidays={new Set()} onClose={vi.fn()} onDelete={vi.fn()} />);
 
-    fireEvent.click(screen.getByText("このユーザーを削除"));
+    const openDeleteButton = screen.getByText("このユーザーを削除");
+    expect(openDeleteButton).toHaveClass("danger-button");
+    fireEvent.click(openDeleteButton);
     const confirmButton = screen.getByText("完全に削除する");
     expect(confirmButton).toBeDisabled();
 
