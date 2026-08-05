@@ -192,6 +192,22 @@ export async function deleteAllCompanyDays(
   await db.prepare(`DELETE FROM ${table} WHERE user_id = ?`).bind(userId).run();
 }
 
+/**
+ * 管理者がユーザーを削除する。所有者として連携しているメンバーのデータは
+ * 保護し、対象ユーザー自身のデータと関係だけをD1のバッチでまとめて削除する。
+ */
+export async function deleteUserData(db: D1Database, userId: string): Promise<void> {
+  await db.batch([
+    db.prepare("DELETE FROM attendance_records WHERE user_id = ?").bind(userId),
+    db.prepare("DELETE FROM company_holidays WHERE user_id = ?").bind(userId),
+    db.prepare("DELETE FROM company_working_days WHERE user_id = ?").bind(userId),
+    db.prepare("DELETE FROM user_settings WHERE user_id = ?").bind(userId),
+    // 所有者を削除しても、メンバー側の休眠データは保持する。
+    db.prepare("DELETE FROM account_links WHERE owner_email = ? OR member_email = ?").bind(userId, userId),
+    db.prepare("DELETE FROM link_requests WHERE requester_email = ? OR target_email = ?").bind(userId, userId),
+  ]);
+}
+
 export async function getJapanHolidays(db: D1Database): Promise<Set<string>> {
   const { results } = await db.prepare("SELECT date FROM japan_holidays").all<{ date: string }>();
   return new Set(results.map((r) => r.date));

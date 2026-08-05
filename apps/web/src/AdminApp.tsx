@@ -1,6 +1,6 @@
 import type { AdminUserDetail, AdminUserSummary } from "@attendance/shared";
 import { useCallback, useEffect, useState } from "react";
-import { getAdminUserDetail, getAdminUsers } from "./api/admin";
+import { deleteAdminUser, getAdminUserDetail, getAdminUsers } from "./api/admin";
 import type { CurrentUser } from "./api/auth";
 import { fetchCurrentUser } from "./api/auth";
 import { ApiError } from "./api/client";
@@ -77,6 +77,16 @@ export default function AdminApp() {
   const clearThreshold = () => {
     setThresholdInput("");
     setAppliedThreshold(null);
+  };
+
+  const deleteUser = async (userId: string) => {
+    try {
+      await deleteAdminUser(userId);
+      setSelectedUserId(null);
+      await loadUsers();
+    } catch (err) {
+      setAlertMessage(err instanceof ApiError ? err.message : "ユーザーの削除に失敗しました");
+    }
   };
 
   if (authLoading) {
@@ -162,7 +172,12 @@ export default function AdminApp() {
       {selectedUserId && (
         <div className="modal-overlay">
           <div className="modal admin-detail-modal">
-            <AdminUserDetailPanel detail={detail} holidays={holidays} onClose={() => setSelectedUserId(null)} />
+            <AdminUserDetailPanel
+              detail={detail}
+              holidays={holidays}
+              onClose={() => setSelectedUserId(null)}
+              onDelete={deleteUser}
+            />
           </div>
         </div>
       )}

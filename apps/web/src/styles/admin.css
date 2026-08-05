@@ -62,3 +62,75 @@
   font-size: 16px;
   word-break: break-all;
 }
+
+.admin-danger-zone {
+  margin-top: 24px;
+  padding: 16px;
+  border: 1px solid #f0b8b8;
+  border-radius: 8px;
+  background: #fff8f8;
+}
+
+.admin-danger-zone h3 {
+  margin: 0 0 8px;
+  color: #a12626;
+  font-size: 14px;
+}
+
+.admin-danger-zone p {
+  margin: 0 0 12px;
+  font-size: 13px;
+}
+
+.admin-danger-zone strong {
+  margin: 0 4px;
+  word-break: break-all;
+}
+
+.admin-danger-zone label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+
+.admin-danger-zone input {
+  display: block;
+  width: min(100%, 420px);
+  margin-bottom: 10px;
+  padding: 8px;
+  border: 1px solid #c9a0a0;
+  border-radius: 6px;
+}
+
+.danger-button {
+  color: #fff;
+  background: #b42318;
+}
+
+.danger-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.admin-delete-dialog {
+  width: min(460px, calc(100vw - 32px));
+}
+
+.admin-delete-dialog h3 {
+  margin-top: 0;
+}
+
+.admin-delete-dialog label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+
+.admin-delete-dialog input {
+  box-sizing: border-box;
+  width: 100%;
+  margin-bottom: 12px;
+  padding: 8px;
+  border: 1px solid #c9a0a0;
+  border-radius: 6px;
+}

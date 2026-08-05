@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { getAllRecords, getAllUserIds } from "../lib/data";
+import { deleteUserData, getAllRecords, getAllUserIds } from "../lib/data";
 import { loadStatsForUser } from "../lib/period";
 import { requireAccessAuth } from "../middleware/accessAuth";
 import { requireAdmin } from "../middleware/adminAuth";
@@ -57,6 +57,23 @@ admin.get("/users/:email/records", async (c) => {
     settings: context.settings,
     stats,
   });
+});
+
+admin.delete("/users/:email", async (c) => {
+  const userId = c.req.param("email").toLowerCase();
+  const currentUserId = c.get("userId");
+
+  if (userId === currentUserId) {
+    return c.json({ error: "現在ログイン中の管理者自身は削除できません" }, 400);
+  }
+
+  const userIds = await getAllUserIds(c.env.DB);
+  if (!userIds.includes(userId)) {
+    return c.json({ error: "指定されたユーザーが見つかりません" }, 404);
+  }
+
+  await deleteUserData(c.env.DB, userId);
+  return c.json({ ok: true });
 });
 
 export { admin as adminRoutes };

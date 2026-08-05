@@ -11,3 +11,7 @@ export async function getAdminUsers(offsetMonths = 0): Promise<AdminUserSummary[
 export function getAdminUserDetail(userId: string, offsetMonths = 0): Promise<AdminUserDetail> {
   return apiFetch(`/admin/users/${encodeURIComponent(userId)}/records?offsetMonths=${offsetMonths}`);
 }
+
+export function deleteAdminUser(userId: string): Promise<{ ok: boolean }> {
+  return apiFetch(`/admin/users/${encodeURIComponent(userId)}`, { method: "DELETE", userInitiated: true });
+}

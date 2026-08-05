@@ -126,3 +126,102 @@ describe("GET /api/admin/users/:email/records", () => {
     expect(body.stats.officeDays).toBeGreaterThanOrEqual(1);
   });
 });
+
+describe("DELETE /api/admin/users/:email", () => {
+  it("管理者以外は403", async () => {
+    const res = await SELF.fetch("http://example.com/api/admin/users/delete-target@example.com", {
+      method: "DELETE",
+      headers: await authHeaders("not-admin@example.com"),
+    });
+    expect(res.status).toBe(403);
+  });
+
+  it("現在ログイン中の管理者自身は削除できない", async () => {
+    const admin = adminEmail();
+    await env.DB.prepare(
+      "INSERT OR IGNORE INTO attendance_records (user_id, date, status, updated_at) VALUES (?, ?, ?, ?)",
+    ).bind(admin, "2099-01-01", "office", new Date().toISOString()).run();
+
+    const res = await SELF.fetch(`http://example.com/api/admin/users/${admin}`, {
+      method: "DELETE",
+      headers: await authHeaders(admin),
+    });
+    expect(res.status).toBe(400);
+    expect((await res.json<{ error: string }>()).error).toContain("自身は削除できません");
+  });
+
+  it("存在しないユーザーは404", async () => {
+    const res = await SELF.fetch("http://example.com/api/admin/users/no-such-delete-user@example.com", {
+      method: "DELETE",
+      headers: await authHeaders(adminEmail()),
+    });
+    expect(res.status).toBe(404);
+  });
+
+  it("所有者を削除すると所有者データと連携を削除し、メンバーの休眠データを保持する", async () => {
+    const owner = "delete-owner@example.com";
+    const member = "delete-owner-member@example.com";
+    const now = new Date().toISOString();
+
+    await env.DB.batch([
+      env.DB.prepare(
+        "INSERT INTO attendance_records (user_id, date, status, updated_at) VALUES (?, ?, ?, ?)",
+      ).bind(owner, "2099-02-01", "office", now),
+      env.DB.prepare(
+        "INSERT INTO attendance_records (user_id, date, status, updated_at) VALUES (?, ?, ?, ?)",
+      ).bind(member, "2099-02-02", "remote", now),
+      env.DB.prepare(
+        "INSERT INTO user_settings (user_id, updated_at) VALUES (?, ?)",
+      ).bind(owner, now),
+      env.DB.prepare(
+        "INSERT INTO user_settings (user_id, updated_at) VALUES (?, ?)",
+      ).bind(member, now),
+      env.DB.prepare(
+        "INSERT INTO account_links (owner_email, member_email, created_at) VALUES (?, ?, ?)",
+      ).bind(owner, member, now),
+      env.DB.prepare(
+        "INSERT INTO link_requests (requester_email, target_email, created_at) VALUES (?, ?, ?)",
+      ).bind(owner, "pending-owner-target@example.com", now),
+    ]);
+
+    const res = await SELF.fetch(`http://example.com/api/admin/users/${owner}`, {
+      method: "DELETE",
+      headers: await authHeaders(adminEmail()),
+    });
+    expect(res.status).toBe(200);
+
+    expect(await env.DB.prepare("SELECT 1 FROM attendance_records WHERE user_id = ?").bind(owner).first()).toBeNull();
+    expect(await env.DB.prepare("SELECT 1 FROM user_settings WHERE user_id = ?").bind(owner).first()).toBeNull();
+    expect(await env.DB.prepare("SELECT 1 FROM attendance_records WHERE user_id = ?").bind(member).first()).not.toBeNull();
+    expect(await env.DB.prepare("SELECT 1 FROM user_settings WHERE user_id = ?").bind(member).first()).not.toBeNull();
+    expect(await env.DB.prepare("SELECT 1 FROM account_links WHERE owner_email = ? OR member_email = ?").bind(owner, owner).first()).toBeNull();
+    expect(await env.DB.prepare("SELECT 1 FROM link_requests WHERE requester_email = ? OR target_email = ?").bind(owner, owner).first()).toBeNull();
+  });
+
+  it("メンバーを削除するとメンバーのデータと連携を削除し、所有者データを保持する", async () => {
+    const owner = "delete-member-owner@example.com";
+    const member = "delete-member@example.com";
+    const now = new Date().toISOString();
+
+    await env.DB.batch([
+      env.DB.prepare(
+        "INSERT INTO attendance_records (user_id, date, status, updated_at) VALUES (?, ?, ?, ?)",
+      ).bind(owner, "2099-03-01", "office", now),
+      env.DB.prepare(
+        "INSERT INTO attendance_records (user_id, date, status, updated_at) VALUES (?, ?, ?, ?)",
+      ).bind(member, "2099-03-02", "remote", now),
+      env.DB.prepare(
+        "INSERT INTO account_links (owner_email, member_email, created_at) VALUES (?, ?, ?)",
+      ).bind(owner, member, now),
+    ]);
+
+    const res = await SELF.fetch(`http://example.com/api/admin/users/${member}`, {
+      method: "DELETE",
+      headers: await authHeaders(adminEmail()),
+    });
+    expect(res.status).toBe(200);
+    expect(await env.DB.prepare("SELECT 1 FROM attendance_records WHERE user_id = ?").bind(member).first()).toBeNull();
+    expect(await env.DB.prepare("SELECT 1 FROM attendance_records WHERE user_id = ?").bind(owner).first()).not.toBeNull();
+    expect(await env.DB.prepare("SELECT 1 FROM account_links WHERE owner_email = ? OR member_email = ?").bind(member, member).first()).toBeNull();
+  });
+});
