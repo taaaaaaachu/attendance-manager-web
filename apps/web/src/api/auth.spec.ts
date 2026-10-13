@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { fetchCurrentUser, logout } from "./auth";
+import { fetchCurrentUser, logout, reauthenticate } from "./auth";
 import { navigation } from "./client";
 
 describe("auth API(Cloudflare Access一本化)", () => {
@@ -34,5 +34,10 @@ describe("auth API(Cloudflare Access一本化)", () => {
   it("logoutはCloudflare Accessのログアウトへ遷移する", () => {
     logout();
     expect(assignSpy).toHaveBeenCalledExactlyOnceWith("/cdn-cgi/access/logout");
+  });
+
+  it("reauthenticateはSWを経由しない/api/auth/refreshへ遷移してAccess再認証に乗せる", () => {
+    reauthenticate();
+    expect(assignSpy).toHaveBeenCalledExactlyOnceWith("/api/auth/refresh");
   });
 });

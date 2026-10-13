@@ -3,7 +3,7 @@ import { isBaseHoliday, isHoliday } from "@attendance/shared";
 import { useCallback, useEffect, useState } from "react";
 import { resetAttendance } from "./api/attendance";
 import type { CurrentUser } from "./api/auth";
-import { fetchCurrentUser, logout } from "./api/auth";
+import { fetchCurrentUser, logout, reauthenticate } from "./api/auth";
 import { ApiError } from "./api/client";
 import {
   addCompanyHoliday,
@@ -175,7 +175,7 @@ export default function App() {
           <p className="auth-error">
             Cloudflareの認証が切れている可能性があります。ページを再読み込みしてください。
           </p>
-          <button type="button" onClick={() => window.location.reload()}>
+          <button type="button" onClick={reauthenticate}>
             再読み込み
           </button>
         </div>

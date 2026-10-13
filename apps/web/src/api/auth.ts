@@ -22,3 +22,12 @@ export function fetchCurrentUser(): Promise<CurrentUser> {
 export function logout(): void {
   navigation.assign("/cdn-cgi/access/logout");
 }
+
+/**
+ * Access再認証へトップレベル遷移する(認証切れ画面の再読み込みボタン用)。
+ * location.reload()だとService Workerがキャッシュ済みアプリシェルを返してAccessに到達せず、
+ * apiFetchの自動遷移の抑止間隔中は同じ画面に戻るだけになるため、SW対象外の/api/へ直接遷移する。
+ */
+export function reauthenticate(): void {
+  navigation.assign("/api/auth/refresh");
+}

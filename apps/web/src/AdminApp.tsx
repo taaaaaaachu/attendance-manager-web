@@ -2,7 +2,7 @@ import type { AdminUserDetail, AdminUserSummary } from "@attendance/shared";
 import { useCallback, useEffect, useState } from "react";
 import { deleteAdminUser, getAdminUserDetail, getAdminUsers } from "./api/admin";
 import type { CurrentUser } from "./api/auth";
-import { fetchCurrentUser } from "./api/auth";
+import { fetchCurrentUser, reauthenticate } from "./api/auth";
 import { ApiError } from "./api/client";
 import { getHolidays } from "./api/holidays";
 import { AdminUserDetailPanel } from "./components/admin/AdminUserDetailPanel";
@@ -101,7 +101,7 @@ export default function AdminApp() {
           <p className="auth-error">
             Cloudflareの認証が切れている可能性があります。ページを再読み込みしてください。
           </p>
-          <button type="button" onClick={() => window.location.reload()}>
+          <button type="button" onClick={reauthenticate}>
             再読み込み
           </button>
         </div>
