@@ -6,6 +6,13 @@ export class ApiError extends Error {
   }
 }
 
+/** 認証復帰のためのページ遷移(再認証・SW解除リロード)を開始済みであることを示すエラー */
+export class AuthRedirectingError extends ApiError {
+  constructor(message: string) {
+    super(401, message);
+  }
+}
+
 // 認証リダイレクトを検出してから再度トップレベル遷移を許可するまでの間隔。
 // ログイン完了後もfetchが失敗し続ける異常時に、遷移の無限ループへ陥るのを防ぐ。
 // ユーザー操作起点のリクエスト(userInitiated)はループの心配がないため抑止対象外。
@@ -79,12 +86,12 @@ async function handleAuthRedirect(userInitiated: boolean): Promise<never> {
   if (userInitiated || !throttled) {
     sessionStorage.setItem(AUTH_REDIRECT_AT_KEY, String(now));
     navigation.assign("/api/auth/refresh");
-    throw new ApiError(401, "ログインセッションの有効期限が切れました。再ログインしています…");
+    throw new AuthRedirectingError("ログインセッションの有効期限が切れました。再ログインしています…");
   }
 
   // 遷移直後なのに再びリダイレクトされた=認証復帰フローが完走できていない。SWの解除を試みる
   if (await tryRecoverByResettingServiceWorker()) {
-    throw new ApiError(401, "認証の復旧処理中です。ページを自動的に再読み込みします…");
+    throw new AuthRedirectingError("認証の復旧処理中です。ページを自動的に再読み込みします…");
   }
 
   // 自己修復も直近に試行済み。進行中を装うメッセージは出さず、手動での復旧を促す

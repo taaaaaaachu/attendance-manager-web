@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ApiError, apiFetch, navigation } from "./client";
+import { ApiError, AuthRedirectingError, apiFetch, navigation } from "./client";
 
 function mockFetchResponse(partial: Partial<Response>): ReturnType<typeof vi.fn> {
   const fetchMock = vi.fn().mockResolvedValue(partial as Response);
@@ -83,11 +83,11 @@ describe("apiFetch", () => {
 
     // 1回目は通常どおり/api/auth/refreshへ遷移
     await expect(apiFetch("/auth/me")).rejects.toThrow(
-      "ログインセッションの有効期限が切れました。再ログインしています…",
+      new AuthRedirectingError("ログインセッションの有効期限が切れました。再ログインしています…"),
     );
     // 遷移から戻った直後(60秒以内)にまた検出=復帰フローが完走していない → SW解除+リロード
     await expect(apiFetch("/auth/me")).rejects.toThrow(
-      "認証の復旧処理中です。ページを自動的に再読み込みします…",
+      new AuthRedirectingError("認証の復旧処理中です。ページを自動的に再読み込みします…"),
     );
     expect(unregister).toHaveBeenCalledTimes(1);
     expect(reloadSpy).toHaveBeenCalledTimes(1);
@@ -105,9 +105,10 @@ describe("apiFetch", () => {
     sessionStorage.setItem("authSwResetAt", String(Date.now()));
     mockFetchResponse(opaqueRedirect);
 
-    await expect(apiFetch("/auth/me")).rejects.toThrow(
-      "認証状態を確認できませんでした。ページを再読み込みしてください",
-    );
+    const error = await apiFetch("/auth/me").catch((e: unknown) => e);
+    // 遷移していないので、画面は「再ログイン中…」ではなく手動復旧を促すフォールバックにする
+    expect(error).not.toBeInstanceOf(AuthRedirectingError);
+    expect((error as ApiError).message).toBe("認証状態を確認できませんでした。ページを再読み込みしてください");
     expect(unregister).not.toHaveBeenCalled();
     expect(reloadSpy).not.toHaveBeenCalled();
   });

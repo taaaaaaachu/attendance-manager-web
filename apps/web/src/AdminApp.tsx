@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { deleteAdminUser, getAdminUserDetail, getAdminUsers } from "./api/admin";
 import type { CurrentUser } from "./api/auth";
 import { fetchCurrentUser, reauthenticate } from "./api/auth";
-import { ApiError } from "./api/client";
+import { ApiError, AuthRedirectingError } from "./api/client";
 import { getHolidays } from "./api/holidays";
 import { AdminUserDetailPanel } from "./components/admin/AdminUserDetailPanel";
 import { AdminUserTable } from "./components/admin/AdminUserTable";
@@ -13,6 +13,7 @@ import { filterUsersBelowRate } from "./utils/adminUtils";
 export default function AdminApp() {
   const [authLoading, setAuthLoading] = useState(true);
   const [user, setUser] = useState<CurrentUser | null>(null);
+  const [reauthenticating, setReauthenticating] = useState(false);
 
   const [offsetMonths, setOffsetMonths] = useState(0);
   const [users, setUsers] = useState<AdminUserSummary[] | null>(null);
@@ -29,7 +30,11 @@ export default function AdminApp() {
   useEffect(() => {
     fetchCurrentUser()
       .then((u) => setUser(u))
-      .catch(() => setUser(null))
+      .catch((err) => {
+        // 再認証への遷移中はエラー画面を出さない(押下で遷移を中断させないため)
+        setReauthenticating(err instanceof AuthRedirectingError);
+        setUser(null);
+      })
       .finally(() => setAuthLoading(false));
   }, []);
 
@@ -91,6 +96,10 @@ export default function AdminApp() {
 
   if (authLoading) {
     return <p style={{ padding: 24 }}>読み込み中...</p>;
+  }
+
+  if (!user && reauthenticating) {
+    return <p style={{ padding: 24 }}>再ログイン中…</p>;
   }
 
   if (!user) {
