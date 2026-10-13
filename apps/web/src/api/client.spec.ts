@@ -82,13 +82,13 @@ describe("apiFetch", () => {
     mockFetchResponse(opaqueRedirect);
 
     // 1回目は通常どおり/api/auth/refreshへ遷移
-    await expect(apiFetch("/auth/me")).rejects.toThrow(
-      new AuthRedirectingError("ログインセッションの有効期限が切れました。再ログインしています…"),
-    );
+    const first = await apiFetch("/auth/me").catch((e: unknown) => e);
+    expect(first).toBeInstanceOf(AuthRedirectingError);
+    expect((first as ApiError).message).toBe("ログインセッションの有効期限が切れました。再ログインしています…");
     // 遷移から戻った直後(60秒以内)にまた検出=復帰フローが完走していない → SW解除+リロード
-    await expect(apiFetch("/auth/me")).rejects.toThrow(
-      new AuthRedirectingError("認証の復旧処理中です。ページを自動的に再読み込みします…"),
-    );
+    const second = await apiFetch("/auth/me").catch((e: unknown) => e);
+    expect(second).toBeInstanceOf(AuthRedirectingError);
+    expect((second as ApiError).message).toBe("認証の復旧処理中です。ページを自動的に再読み込みします…");
     expect(unregister).toHaveBeenCalledTimes(1);
     expect(reloadSpy).toHaveBeenCalledTimes(1);
     expect(assignSpy).toHaveBeenCalledTimes(1);
