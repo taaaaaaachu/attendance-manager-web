@@ -1,7 +1,7 @@
 export interface Bindings {
   DB: D1Database;
   ASSETS: Fetcher;
-  /** Cloudflare Accessのチームドメイン(例: example.cloudflareaccess.com) */
+  /** Cloudflare Accessのチームドメイン(例: your-team.cloudflareaccess.com) */
   ACCESS_TEAM_DOMAIN: string;
   /** AccessアプリケーションのAUDタグ(JWTのaud検証に使う) */
   ACCESS_AUD: string;

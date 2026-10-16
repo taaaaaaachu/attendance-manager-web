@@ -1,6 +1,6 @@
 # Attendance Manager Web版
 
-出社・在宅管理アプリのWeb版。[attendance-manager](../attendance-manager)(Tauriデスクトップアプリ)とは
+出社・在宅管理アプリのWeb版。attendance-manager(Tauriデスクトップアプリ)とは
 **完全に独立した別プロダクト**として、Cloudflare Workers上で動作する。デスクトップ版とのデータ連携は行わない。
 
 ## 技術スタック
@@ -105,6 +105,12 @@ cd workers/api && pnpm test
    cd ../../workers/api && pnpm deploy
    ```
 
+   ※ `wrangler.jsonc` の `routes` の `pattern` と `ACCESS_TEAM_DOMAIN` はプレースホルダー(`example.com` 等)。
+   通常のデプロイはGitHub Actions(`.github/workflows/ci.yml`)がmainへのpushで行い、その際に
+   GitHub Secretsの `PROD_HOSTNAME`(例: `attendance-manager.your-domain.com`)と
+   `ACCESS_TEAM_DOMAIN`(例: `your-team.cloudflareaccess.com`)で置き換える。手元からデプロイする場合は
+   これらを自分の値に書き換えてから実行すること。
+
 ## PWA(Progressive Web App)
 
 `apps/web` は `vite-plugin-pwa` によりPWA化しており、スマートフォン等のホーム画面に追加して
@@ -185,3 +191,7 @@ cd workers/api && pnpm test
 - PNG画像エクスポート(html2canvasを使った期間カレンダーの画像化)は未実装。JSONエクスポートのみ対応。
 - ダークモードは視認性の問題があったため廃止し、端末設定によらず常にライトモードで表示する。
 - PWAの実機でのホーム画面追加・自動更新の最終確認は未実施(上記「PWA」セクション参照)。
+
+## ライセンス
+
+[MIT License](LICENSE)

@@ -70,6 +70,19 @@ jobs:
       - name: Build frontend
         run: pnpm --filter @attendance/web build
 
+      # 本番のドメイン等は公開リポジトリに含めないため、GitHub Secretsからwrangler.jsoncへ差し込む
+      - name: Inject production values into wrangler.jsonc
+        working-directory: workers/api
+        env:
+          PROD_HOSTNAME: ${{ secrets.PROD_HOSTNAME }}
+          ACCESS_TEAM_DOMAIN: ${{ secrets.ACCESS_TEAM_DOMAIN }}
+        run: |
+          sed -i \
+            -e "s|attendance-manager\.example\.com|${PROD_HOSTNAME:?}|" \
+            -e "s|example\.cloudflareaccess\.com|${ACCESS_TEAM_DOMAIN:?}|" \
+            wrangler.jsonc
+          ! grep -nE "example\.(com|cloudflareaccess)" wrangler.jsonc
+
       - name: Apply D1 migrations (remote)
         working-directory: workers/api
         run: npx wrangler d1 migrations apply attendance-manager-db --remote
