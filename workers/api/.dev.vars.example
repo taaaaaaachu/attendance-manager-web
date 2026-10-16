@@ -2,3 +2,5 @@
 # wrangler devにはCloudflare Access層がないため、DEV_USER_EMAILで固定ユーザーとして認証をバイパスする。
 # 本番には絶対に設定しないこと(wrangler.jsoncのvarsに書かない)。
 DEV_USER_EMAIL=dev@example.com
+# 管理者機能(/admin)を使えるメールアドレス(カンマ区切り)。本番は `wrangler secret put ADMIN_EMAILS` で設定する。
+ADMIN_EMAILS=dev@example.com

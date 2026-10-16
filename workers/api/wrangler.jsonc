@@ -9,9 +9,9 @@
   "workers_dev": false,
   "vars": {
     "ACCESS_TEAM_DOMAIN": "example.cloudflareaccess.com",
-    "ACCESS_AUD": "876253fd9d5b82d3862f7b3d80d5a475b71d35934c7aacdb76cc264724562e41",
-    // 管理者機能(/admin)を使えるメールアドレス(カンマ区切り)
-    "ADMIN_EMAILS": "owner@example.com"
+    "ACCESS_AUD": "876253fd9d5b82d3862f7b3d80d5a475b71d35934c7aacdb76cc264724562e41"
+    // 管理者機能(/admin)を使えるメールアドレス(カンマ区切り)ADMIN_EMAILSは個人情報のため
+    // varsに書かず、本番は `wrangler secret put ADMIN_EMAILS`、ローカルは .dev.vars で設定する
   },
   "assets": {
     "directory": "../../apps/web/dist",

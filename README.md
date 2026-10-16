@@ -147,8 +147,15 @@ cd workers/api && pnpm test
 
 ## 管理者機能(/admin)
 
-`workers/api/wrangler.jsonc` の `vars.ADMIN_EMAILS`(カンマ区切りのメールアドレス)に
-含まれるユーザーだけが `/admin` ページを利用できる。ロールを持つテーブルは無く、この設定値のみで判定する。
+環境変数 `ADMIN_EMAILS`(カンマ区切りのメールアドレス)に含まれるユーザーだけが
+`/admin` ページを利用できる。ロールを持つテーブルは無く、この設定値のみで判定する。
+
+個人のメールアドレスをリポジトリに含めないため、`wrangler.jsonc` の `vars` には書かない。
+
+- 本番: `workers/api` で `npx wrangler secret put ADMIN_EMAILS` を実行して登録する
+  (secretは以後の `wrangler deploy` でも保持される)。
+- ローカル開発: `workers/api/.dev.vars` に `ADMIN_EMAILS=...` を書く。
+- テスト: `workers/api/vitest.config.ts` の `miniflare.bindings` で固定値を与えている。
 
 - 全ユーザー(`attendance_records` に1件以上記録があるメールアドレス)の出社率統計一覧、
   期間ナビゲーション、指定した出社率を下回るユーザーの抽出ができる。
