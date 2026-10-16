@@ -3,6 +3,18 @@
 出社・在宅管理アプリのWeb版。attendance-manager(Tauriデスクトップアプリ)とは
 **完全に独立した別プロダクト**として、Cloudflare Workers上で動作する。デスクトップ版とのデータ連携は行わない。
 
+## 主な機能
+
+- 日ごとの出社・在宅の記録と、締め日ベースの期間ごとの出社率の集計
+- 必須出社日のルールや目標出社率の設定、会社の休日・出勤日の登録
+- 日本の祝日の自動取得(内閣府の公開CSVを実行時に取得)
+- 勤怠データのJSONエクスポート
+- 複数のメールアドレスを1つのカレンダーに束ねるアカウント連携
+- 管理者向けの全ユーザーの出社率一覧・閲覧・ユーザー削除(`/admin`)
+- PWA対応(スマートフォンのホーム画面に追加して使える)
+
+用語の定義は [CONTEXT.md](CONTEXT.md)、設計判断は [docs/adr/](docs/adr/) を参照。
+
 ## 技術スタック
 
 - **Cloudflare Workers**: 単一WorkerでAPI(Hono)とフロントエンド静的アセットを両方配信
@@ -41,6 +53,7 @@ pnpm install
 
    ローカルにはCloudflare Access層がないため、`.dev.vars` の `DEV_USER_EMAIL` で
    固定ユーザーとして動作する(本番ではこの変数を設定しないこと)。
+   `ADMIN_EMAILS` に同じアドレスを書くと、ローカルで管理者機能も使える。
 
 2. フロントエンドをビルドしてWorker側のassetsディレクトリに出力:
 
@@ -56,7 +69,7 @@ pnpm install
    pnpm dev
    ```
 
-   `http://127.0.0.1:8787` でアプリ全体(ログイン画面〜カレンダー)にアクセスできる。
+   `http://127.0.0.1:8787` でアプリ全体にアクセスできる。
 
 フロントエンドのみをHMR付きで素早く開発したい場合は `apps/web` で `pnpm dev`(Vite、ポート5173)を使う。
 `vite.config.ts` で `/api/*` を `http://127.0.0.1:8787` にプロキシしているため、`workers/api` 側の
@@ -68,9 +81,15 @@ pnpm install
 # packages/shared のロジックテスト
 cd packages/shared && pnpm test
 
+# apps/web のコンポーネントテスト
+cd apps/web && pnpm test
+
 # workers/api の統合テスト(@cloudflare/vitest-pool-workers、実際のWorkersランタイム上で実行)
+# wrangler.jsoncのassets.directoryが実在する必要があるため、先にapps/webをビルドしておく
 cd workers/api && pnpm test
 ```
+
+各パッケージで `pnpm typecheck` を実行すると型チェックができる。
 
 ## デプロイ(初回)
 
@@ -91,6 +110,8 @@ cd workers/api && pnpm test
    ```
 
    出力される `database_id` を `workers/api/wrangler.jsonc` の `d1_databases[0].database_id` に反映する。
+   同じファイルの `account_id` も自分のCloudflareアカウントIDに書き換える
+   (リポジトリに入っている値は開発者のもの)。
 
 3. リモートDBにマイグレーションを適用:
 
@@ -98,18 +119,40 @@ cd workers/api && pnpm test
    pnpm db:migrate:remote
    ```
 
-4. フロントエンドをビルドしてデプロイ:
+4. Cloudflare Accessでアプリを保護し、AUDタグを `wrangler.jsonc` の `ACCESS_AUD` に設定する
+   (後述の「認証(Cloudflare Access)」参照)。
+
+5. 管理者のメールアドレスをsecretとして登録する(後述の「管理者機能」参照):
+
+   ```bash
+   npx wrangler secret put ADMIN_EMAILS
+   ```
+
+6. フロントエンドをビルドしてデプロイ:
 
    ```bash
    cd apps/web && pnpm build
    cd ../../workers/api && pnpm deploy
    ```
 
-   ※ `wrangler.jsonc` の `routes` の `pattern` と `ACCESS_TEAM_DOMAIN` はプレースホルダー(`example.com` 等)。
-   通常のデプロイはGitHub Actions(`.github/workflows/ci.yml`)がmainへのpushで行い、その際に
-   GitHub Secretsの `PROD_HOSTNAME`(例: `attendance-manager.your-domain.com`)と
-   `ACCESS_TEAM_DOMAIN`(例: `your-team.cloudflareaccess.com`)で置き換える。手元からデプロイする場合は
-   これらを自分の値に書き換えてから実行すること。
+   `wrangler.jsonc` の `routes` の `pattern` と `ACCESS_TEAM_DOMAIN` はプレースホルダー(`example.com` 等)。
+   手元からデプロイする場合は、これらを自分の値に書き換えてから実行すること。
+
+## CI/CD(GitHub Actions)
+
+`.github/workflows/ci.yml` が、すべてのpush/PRで各パッケージの型チェック・テスト・ビルドを行い、
+mainへのpushではテスト成功後に本番D1へのマイグレーション適用とデプロイまで行う(push = 本番反映)。
+デプロイジョブは `production` 環境で実行される。
+
+リポジトリの **Settings > Secrets and variables > Actions** に以下を登録する。
+
+| Secret | 内容 |
+|---|---|
+| `CLOUDFLARE_API_TOKEN` | [API Tokens](https://dash.cloudflare.com/profile/api-tokens) で「Edit Cloudflare Workers」テンプレートに`D1: 編集`を追加して発行したトークン |
+| `PROD_HOSTNAME` | 本番のカスタムドメイン(例: `attendance-manager.your-domain.com`) |
+| `ACCESS_TEAM_DOMAIN` | Cloudflare Accessのteam domain(例: `your-team.cloudflareaccess.com`) |
+
+デプロイ直前に、`wrangler.jsonc` のプレースホルダーをこれらの値で置き換える。
 
 ## PWA(Progressive Web App)
 
@@ -163,9 +206,13 @@ cd workers/api && pnpm test
 - ローカル開発: `workers/api/.dev.vars` に `ADMIN_EMAILS=...` を書く。
 - テスト: `workers/api/vitest.config.ts` の `miniflare.bindings` で固定値を与えている。
 
+できること:
+
 - 全ユーザー(`attendance_records` に1件以上記録があるメールアドレス)の出社率統計一覧、
   期間ナビゲーション、指定した出社率を下回るユーザーの抽出ができる。
 - ユーザー行をクリックすると、そのユーザーのカレンダー・統計を閲覧できる(読み取り専用、編集不可)。
+- 指定したユーザーの勤怠・設定・連携関係を完全に削除できる
+  ([docs/adr/0003-admin-user-deletion.md](docs/adr/0003-admin-user-deletion.md))。
 - 詳細は [docs/adr/0001-admin-feature.md](docs/adr/0001-admin-feature.md) を参照。
 
 ## アカウント連携(複数メールで1つのカレンダー)
