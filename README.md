@@ -110,8 +110,6 @@ cd workers/api && pnpm test
    ```
 
    出力される `database_id` を `workers/api/wrangler.jsonc` の `d1_databases[0].database_id` に反映する。
-   同じファイルの `account_id` も自分のCloudflareアカウントIDに書き換える
-   (リポジトリに入っている値は開発者のもの)。
 
 3. リモートDBにマイグレーションを適用:
 

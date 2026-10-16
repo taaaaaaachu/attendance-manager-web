@@ -2,11 +2,11 @@
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "attendance-manager",
   "main": "src/index.ts",
-  "account_id": "e8175a8e88ef599f43bf8a4f07d0874d",
   "compatibility_date": "2026-07-01",
   "routes": [{ "pattern": "attendance-manager.example.com", "custom_domain": true }],
-  // workers.devのURLはCloudflare Accessで保護されないため必ず無効化する
+  // workers.devとPreview URLはCloudflare Accessで保護されないため必ず無効化する
   "workers_dev": false,
+  "preview_urls": false,
   // routesのpatternとACCESS_TEAM_DOMAINはプレースホルダー。本番の値はGitHub Actions(ci.yml)が
   // デプロイ直前にGitHub Secretsから差し込む。そのためローカルから直接 wrangler deploy しないこと。
   "vars": {
