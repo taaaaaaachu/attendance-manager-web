@@ -22,7 +22,8 @@
     "directory": "../../apps/web/dist",
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
-    "run_worker_first": ["/api/*"]
+    // /mcp・/oauth/*・/.well-known/* はエージェント接続(docs/adr/0004)。SPAのフォールバックに吸われないようWorkerへ通す
+    "run_worker_first": ["/api/*", "/mcp", "/oauth/*", "/.well-known/*"]
   },
   "d1_databases": [
     {
@@ -30,6 +31,14 @@
       "database_name": "attendance-manager-db",
       "database_id": "a78a4869-7adf-456c-9052-fa8cedc5e45b",
       "migrations_dir": "migrations"
+    }
+  ],
+  // 誰でも呼べる /oauth/register(DCR)の濫用でD1の無料枠を食い潰されないよう、IPごとに回数を制限する
+  "ratelimits": [
+    {
+      "name": "REGISTER_RATE_LIMITER",
+      "namespace_id": "1001",
+      "simple": { "limit": 10, "period": 60 }
     }
   ],
   "observability": {

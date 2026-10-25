@@ -11,6 +11,9 @@ export default defineWorkersConfig({
           // 検証ができなくなる。テストは本番同様にバイパス無効(空)で実行する。
           // ADMIN_EMAILSは本番ではsecretなので、テスト用の管理者を固定値で与える。
           bindings: { DEV_USER_EMAIL: "", ADMIN_EMAILS: "admin@example.com" },
+          // vitest-pool-workers 0.8 同梱のwranglerはwrangler.jsoncの "ratelimits" を読めないため、
+          // 同じ制限をminiflareに直接渡す(値はwrangler.jsoncと揃えること)
+          ratelimits: { REGISTER_RATE_LIMITER: { simple: { limit: 10, period: 60 } } },
         },
       },
     },

@@ -56,4 +56,9 @@ describe("pwaOptions", () => {
     const denylist = pwaOptions.workbox?.navigateFallbackDenylist;
     expect(denylist?.some((pattern) => pattern.test("/cdn-cgi/access/authorized"))).toBe(true);
   });
+
+  it("navigateFallbackDenylistで/oauth/配下(エージェント接続の同意画面)を除外する", () => {
+    const denylist = pwaOptions.workbox?.navigateFallbackDenylist;
+    expect(denylist?.some((pattern) => pattern.test("/oauth/authorize"))).toBe(true);
+  });
 });

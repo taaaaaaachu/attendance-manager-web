@@ -12,6 +12,8 @@ export interface Bindings {
   DEV_USER_EMAIL?: string;
   /** 管理者のメールアドレス(カンマ区切り)。ロールを持つテーブルが無いため設定値で判定する */
   ADMIN_EMAILS: string;
+  /** /oauth/register(誰でも呼べるDCR)のIPごとの回数制限 */
+  REGISTER_RATE_LIMITER: RateLimit;
 }
 
 export interface Variables {

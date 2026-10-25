@@ -35,7 +35,8 @@ export const pwaOptions: Partial<VitePWAOptions> = {
     // /cdn-cgi/はCloudflare予約パス。特に/cdn-cgi/access/authorizedはAccessの認証コールバックで、
     // Cloudflareのエッジが処理してCF_Authorization Cookieを設定する。SWがここにキャッシュ済み
     // アプリシェルを返すとCookieが設定されず、認証切れ→再認証→コールバック横取りの無限ループに陥る
-    navigateFallbackDenylist: [/^\/api\//, /^\/cdn-cgi\//],
+    // /oauth/はエージェント接続の同意画面(Workerがサーバー描画する)。SWにアプリシェルを返されると許可できない
+    navigateFallbackDenylist: [/^\/api\//, /^\/cdn-cgi\//, /^\/oauth\//],
     cleanupOutdatedCaches: true,
     runtimeCaching: [
       {

@@ -6,6 +6,7 @@ import { companyHolidayRoutes, companyWorkingDayRoutes } from "./routes/companyD
 import { exportRoutes } from "./routes/export";
 import { holidayRoutes } from "./routes/holidays";
 import { linkRoutes } from "./routes/links";
+import { oauthRoutes, wellKnownRoutes } from "./routes/oauth";
 import { recordRoutes } from "./routes/records";
 import { scheduleRoutes } from "./routes/schedule";
 import { settingsRoutes } from "./routes/settings";
@@ -31,5 +32,10 @@ app.route("/api/attendance", attendanceRoutes);
 app.route("/api/export", exportRoutes);
 app.route("/api/admin", adminRoutes);
 app.route("/api/links", linkRoutes);
+
+// エージェント向け(ADR 0004)。/oauth/authorize 以外はCloudflare AccessをBypassするパスなので、
+// 各ルートは requireAccessAuth を通さず、トークン・認可コードだけで認証する
+app.route("/oauth", oauthRoutes);
+app.route("/.well-known", wellKnownRoutes);
 
 export default app;
