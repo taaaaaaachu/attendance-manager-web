@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { adminRoutes } from "./routes/admin";
+import { agentConnectionRoutes } from "./routes/agentConnections";
 import { attendanceRoutes } from "./routes/attendance";
 import { authRoutes } from "./routes/auth";
 import { companyHolidayRoutes, companyWorkingDayRoutes } from "./routes/companyDays";
@@ -33,6 +34,7 @@ app.route("/api/attendance", attendanceRoutes);
 app.route("/api/export", exportRoutes);
 app.route("/api/admin", adminRoutes);
 app.route("/api/links", linkRoutes);
+app.route("/api/agent-connections", agentConnectionRoutes);
 
 // エージェント向け(ADR 0004)。/oauth/authorize 以外はCloudflare AccessをBypassするパスなので、
 // 各ルートは requireAccessAuth を通さず、トークン・認可コードだけで認証する

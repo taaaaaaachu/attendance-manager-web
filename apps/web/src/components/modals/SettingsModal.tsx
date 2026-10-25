@@ -3,6 +3,7 @@ import { isBaseHoliday } from "@attendance/shared";
 import { useState } from "react";
 import type { CurrentUser } from "../../api/auth";
 import { AccountLinkSection } from "./AccountLinkSection";
+import { AgentConnectionSection } from "./AgentConnectionSection";
 import { AlertDialog } from "./AlertDialog";
 import { ConfirmDialog } from "./ConfirmDialog";
 
@@ -72,6 +73,8 @@ export function SettingsModal(props: Props) {
         </div>
 
         <AccountLinkSection onChanged={props.onLinkChanged} />
+
+        <AgentConnectionSection />
 
         <div className="field">
           <label>目標出社率(%)</label>

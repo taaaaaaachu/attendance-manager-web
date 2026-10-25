@@ -13,6 +13,11 @@ vi.mock("../../api/links", () => ({
   removeMember: vi.fn(),
   leaveLink: vi.fn(),
 }));
+vi.mock("../../api/agentConnections", () => ({
+  listAgentConnections: vi.fn().mockResolvedValue([]),
+  issueAgentToken: vi.fn(),
+  revokeAgentConnection: vi.fn(),
+}));
 
 const SETTINGS: UserSettings = {
   targetOfficeRate: 50,
