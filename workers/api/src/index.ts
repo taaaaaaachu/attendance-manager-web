@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { purgeExpiredOAuthData } from "./lib/oauth";
 import { adminRoutes } from "./routes/admin";
 import { agentConnectionRoutes } from "./routes/agentConnections";
 import { attendanceRoutes } from "./routes/attendance";
@@ -42,4 +43,10 @@ app.route("/mcp", mcpRoutes);
 app.route("/oauth", oauthRoutes);
 app.route("/.well-known", wellKnownRoutes);
 
-export default app;
+export default {
+  fetch: app.fetch,
+  // 期限切れの認可コード・90日使われていない接続・未使用のDCR登録の掃除(日次、wrangler.jsoncのtriggers)
+  async scheduled(_controller, env) {
+    await purgeExpiredOAuthData(env.DB);
+  },
+} satisfies ExportedHandler<AppEnv["Bindings"]>;

@@ -41,6 +41,8 @@
       "simple": { "limit": 10, "period": 60 }
     }
   ],
+  // エージェント接続まわりの期限切れの行を毎日消す(src/index.ts の scheduled)
+  "triggers": { "crons": ["0 18 * * *"] },
   "observability": {
     "enabled": true,
     "head_sampling_rate": 1
