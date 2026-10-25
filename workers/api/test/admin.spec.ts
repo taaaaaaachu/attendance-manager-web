@@ -16,8 +16,16 @@ async function jsonHeaders(email: string): Promise<Record<string, string>> {
   return authHeaders(email, { "Content-Type": "application/json" });
 }
 
-function todayStr(): string {
-  return new Date().toISOString().slice(0, 10);
+/**
+ * そのユーザーの今の期間内にある平日を1日返す。「今日」に記録すると、土日に実行したとき
+ * 営業日でないため出社日数に数えられずテストが落ちる。設定(締め日)を変える場合は変えた後に呼ぶ。
+ */
+async function weekdayInCurrentPeriod(email: string): Promise<string> {
+  const res = await SELF.fetch("http://example.com/api/period", { headers: await authHeaders(email) });
+  const { startDate } = await res.json<{ startDate: string }>();
+  const date = new Date(`${startDate}T00:00:00Z`);
+  while (date.getUTCDay() === 0 || date.getUTCDay() === 6) date.setUTCDate(date.getUTCDate() + 1);
+  return date.toISOString().slice(0, 10);
 }
 
 describe("GET /api/admin/users", () => {
@@ -37,20 +45,20 @@ describe("GET /api/admin/users", () => {
     const userA = "admin-list-a@example.com";
     const userB = "admin-list-b@example.com";
 
-    await SELF.fetch(`http://example.com/api/records/${todayStr()}`, {
-      method: "PUT",
-      headers: await jsonHeaders(userA),
-      body: JSON.stringify({ status: "office" }),
-    });
-    await SELF.fetch(`http://example.com/api/records/${todayStr()}`, {
-      method: "PUT",
-      headers: await jsonHeaders(userB),
-      body: JSON.stringify({ status: "remote" }),
-    });
     await SELF.fetch("http://example.com/api/settings", {
       method: "PUT",
       headers: await jsonHeaders(userB),
       body: JSON.stringify({ targetOfficeRate: 80, closingDay: 20, closingDayShift: "previous" }),
+    });
+    await SELF.fetch(`http://example.com/api/records/${await weekdayInCurrentPeriod(userA)}`, {
+      method: "PUT",
+      headers: await jsonHeaders(userA),
+      body: JSON.stringify({ status: "office" }),
+    });
+    await SELF.fetch(`http://example.com/api/records/${await weekdayInCurrentPeriod(userB)}`, {
+      method: "PUT",
+      headers: await jsonHeaders(userB),
+      body: JSON.stringify({ status: "remote" }),
     });
 
     const res = await SELF.fetch("http://example.com/api/admin/users?offsetMonths=0", {
@@ -103,7 +111,8 @@ describe("GET /api/admin/users/:email/records", () => {
 
   it("管理者は指定ユーザーの記録を読み取り専用で閲覧できる", async () => {
     const user = "admin-detail-user@example.com";
-    await SELF.fetch(`http://example.com/api/records/${todayStr()}`, {
+    const date = await weekdayInCurrentPeriod(user);
+    await SELF.fetch(`http://example.com/api/records/${date}`, {
       method: "PUT",
       headers: await jsonHeaders(user),
       body: JSON.stringify({ status: "office" }),
@@ -121,7 +130,7 @@ describe("GET /api/admin/users/:email/records", () => {
     }>();
     expect(body.userId).toBe(user);
     expect(body.records).toEqual(
-      expect.arrayContaining([expect.objectContaining({ date: todayStr(), status: "office" })]),
+      expect.arrayContaining([expect.objectContaining({ date, status: "office" })]),
     );
     expect(body.stats.officeDays).toBeGreaterThanOrEqual(1);
   });
