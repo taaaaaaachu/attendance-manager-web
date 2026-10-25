@@ -1,5 +1,6 @@
 import { env, SELF } from "cloudflare:test";
 import { beforeAll, describe, expect, it } from "vitest";
+import { authenticateAgent, issueManualConnection } from "../src/lib/agentConnections";
 import { authHeaders, mockAccessCerts } from "./helpers/access";
 import { applyMigrations } from "./helpers/migrations";
 
@@ -232,5 +233,47 @@ describe("DELETE /api/admin/users/:email", () => {
     expect(await env.DB.prepare("SELECT 1 FROM attendance_records WHERE user_id = ?").bind(member).first()).toBeNull();
     expect(await env.DB.prepare("SELECT 1 FROM attendance_records WHERE user_id = ?").bind(owner).first()).not.toBeNull();
     expect(await env.DB.prepare("SELECT 1 FROM account_links WHERE owner_email = ? OR member_email = ?").bind(member, member).first()).toBeNull();
+  });
+});
+
+describe("エージェント接続(管理者)", () => {
+  it("管理者以外は一覧も取り消しもできない", async () => {
+    const headers = await authHeaders("not-admin@example.com");
+    expect((await SELF.fetch("http://example.com/api/admin/agent-connections", { headers })).status).toBe(403);
+    const { id } = await issueManualConnection(env.DB, "victim-agent@example.com", "x");
+    const res = await SELF.fetch(`http://example.com/api/admin/agent-connections/${id}`, { method: "DELETE", headers });
+    expect(res.status).toBe(403);
+  });
+
+  it("勤怠記録の無い人も含む全員の接続を一覧でき、取り消せる", async () => {
+    const { id, token } = await issueManualConnection(env.DB, "no-records-agent@example.com", "dots");
+    const list = await SELF.fetch("http://example.com/api/admin/agent-connections", {
+      headers: await authHeaders(adminEmail()),
+    });
+    const { connections } = await list.json<{ connections: { id: string; userEmail: string }[] }>();
+    expect(connections).toEqual(
+      expect.arrayContaining([expect.objectContaining({ id, userEmail: "no-records-agent@example.com" })]),
+    );
+
+    const res = await SELF.fetch(`http://example.com/api/admin/agent-connections/${id}`, {
+      method: "DELETE",
+      headers: await authHeaders(adminEmail()),
+    });
+    expect(res.status).toBe(200);
+    expect(await authenticateAgent(env.DB, token)).toBeNull();
+  });
+
+  it("ユーザー削除で、そのユーザーが発行した接続も消える", async () => {
+    const user = "delete-agent-user@example.com";
+    await env.DB.prepare("INSERT INTO attendance_records (user_id, date, status, updated_at) VALUES (?, ?, ?, ?)")
+      .bind(user, "2099-03-01", "office", new Date().toISOString())
+      .run();
+    const { token } = await issueManualConnection(env.DB, user, "dots");
+    const res = await SELF.fetch(`http://example.com/api/admin/users/${user}`, {
+      method: "DELETE",
+      headers: await authHeaders(adminEmail()),
+    });
+    expect(res.status).toBe(200);
+    expect(await authenticateAgent(env.DB, token)).toBeNull();
   });
 });

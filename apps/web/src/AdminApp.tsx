@@ -5,6 +5,7 @@ import type { CurrentUser } from "./api/auth";
 import { fetchCurrentUser, reauthenticate } from "./api/auth";
 import { ApiError, AuthRedirectingError } from "./api/client";
 import { getHolidays } from "./api/holidays";
+import { AdminAgentConnectionTable } from "./components/admin/AdminAgentConnectionTable";
 import { AdminUserDetailPanel } from "./components/admin/AdminUserDetailPanel";
 import { AdminUserTable } from "./components/admin/AdminUserTable";
 import { AlertDialog } from "./components/modals/AlertDialog";
@@ -26,6 +27,7 @@ export default function AdminApp() {
   const [detail, setDetail] = useState<AdminUserDetail | null>(null);
 
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
+  const [connectionsRefreshKey, setConnectionsRefreshKey] = useState(0);
 
   useEffect(() => {
     fetchCurrentUser()
@@ -88,6 +90,7 @@ export default function AdminApp() {
     try {
       await deleteAdminUser(userId);
       setSelectedUserId(null);
+      setConnectionsRefreshKey((k) => k + 1);
       await loadUsers();
     } catch (err) {
       setAlertMessage(err instanceof ApiError ? err.message : "ユーザーの削除に失敗しました");
@@ -176,6 +179,8 @@ export default function AdminApp() {
         </div>
 
         {users === null ? <p>読み込み中...</p> : <AdminUserTable users={filteredUsers} onSelectUser={setSelectedUserId} />}
+
+        <AdminAgentConnectionTable refreshKey={connectionsRefreshKey} />
       </main>
 
       {selectedUserId && (

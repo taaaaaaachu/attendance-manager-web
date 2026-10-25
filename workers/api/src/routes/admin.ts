@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { listAgentConnections, revokeAgentConnection } from "../lib/agentConnections";
 import { deleteUserData, getAllRecords, getAllUserIds } from "../lib/data";
 import { loadStatsForUser } from "../lib/period";
 import { requireAccessAuth } from "../middleware/accessAuth";
@@ -73,6 +74,20 @@ admin.delete("/users/:email", async (c) => {
   }
 
   await deleteUserData(c.env.DB, userId);
+  return c.json({ ok: true });
+});
+
+/**
+ * 全ユーザーのエージェント接続(ADR 0004)。/mcp はAccessをBypassするため、Accessのポリシーから
+ * 外した人の接続も動き続ける。その接続を管理者が取り消せるようにする(勤怠記録の無い人の接続も出す)。
+ */
+admin.get("/agent-connections", async (c) => {
+  return c.json({ connections: await listAgentConnections(c.env.DB, null) });
+});
+
+admin.delete("/agent-connections/:id", async (c) => {
+  const revoked = await revokeAgentConnection(c.env.DB, c.req.param("id"), null);
+  if (!revoked) return c.json({ error: "接続が見つかりません" }, 404);
   return c.json({ ok: true });
 });
 

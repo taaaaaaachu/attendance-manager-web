@@ -205,6 +205,9 @@ export async function deleteUserData(db: D1Database, userId: string): Promise<vo
     // 所有者を削除しても、メンバー側の休眠データは保持する。
     db.prepare("DELETE FROM account_links WHERE owner_email = ? OR member_email = ?").bind(userId, userId),
     db.prepare("DELETE FROM link_requests WHERE requester_email = ? OR target_email = ?").bind(userId, userId),
+    // 残すと削除後もエージェントが書き込めてしまうため、発行したエージェント接続も消す(ADR 0004)
+    db.prepare("DELETE FROM agent_connections WHERE user_email = ?").bind(userId),
+    db.prepare("DELETE FROM oauth_codes WHERE user_email = ?").bind(userId),
   ]);
 }
 
