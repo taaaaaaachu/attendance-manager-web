@@ -31,6 +31,10 @@ erDiagram
     USER_EMAIL ||--o| account_links : "member_email (参加者/1メール1件)"
     USER_EMAIL ||--o{ link_requests : "requester_email (申請者)"
     USER_EMAIL ||--o{ link_requests : "target_email (承認者)"
+    USER_EMAIL ||--o{ agent_connections : "user_email (発行者)"
+    USER_EMAIL ||--o{ oauth_codes : "user_email (同意した人)"
+    oauth_clients |o--o{ agent_connections : "client_id (DCRのみ・手動はNULL)"
+    oauth_clients |o--o{ oauth_codes : "client_id (DCRのみ)"
 
     USER_EMAIL {
         string email "Cloudflare Access認証のメール（物理テーブルなし・FKなし）"
@@ -79,6 +83,36 @@ erDiagram
         string target_email PK "承認者のメール（indexあり）"
         string created_at "ISO8601"
     }
+
+    agent_connections {
+        string id PK "UUID"
+        string user_email "発行者のメール（indexあり）"
+        string name "一覧での名前"
+        string client_id "OAuthのクライアント（CIMDのURLかDCRのID）。NULL=手動発行"
+        string access_hash UK "アクセストークンのSHA-256"
+        string access_expires_at "ISO8601。NULL=期限なし（手動発行）"
+        string refresh_hash UK "リフレッシュトークンのSHA-256"
+        string previous_refresh_hash "1つ前のリフレッシュトークン（再利用検知・indexあり）"
+        string created_at "ISO8601"
+        string last_used_at "ISO8601（90日未使用で失効）"
+    }
+
+    oauth_clients {
+        string id PK "dcr_で始まるクライアントID"
+        string client_name "自己申告の名前"
+        string redirect_uris "JSON配列"
+        string created_at "ISO8601（未使用のまま30日で削除）"
+    }
+
+    oauth_codes {
+        string code_hash PK "認可コードのSHA-256"
+        string client_id "クライアントID"
+        string redirect_uri "戻り先"
+        string code_challenge "PKCE S256"
+        string user_email "同意した人のメール"
+        string name "作る接続の名前"
+        string expires_at "ISO8601（60秒）"
+    }
 ```
 
 ## テーブル別メモ
@@ -92,6 +126,11 @@ erDiagram
 | `japan_holidays` | `date` | 内閣府から取得した日本の祝日(全ユーザー共通) |
 | `account_links` | `member_email` | 成立したアカウント連携。`member_email` を本体 `owner_email` に解決する |
 | `link_requests` | (`requester_email`, `target_email`) | 未承認の連携申請のみ保持(承認・却下・取消で消える) |
+| `agent_connections` | `id` | エージェント接続(OAuthで作ったもの・手動発行のもの)。トークンはハッシュのみ |
+| `oauth_clients` | `id` | DCRで登録されたOAuthクライアント(CIMDのクライアントは保存しない) |
+| `oauth_codes` | `code_hash` | 未使用の認可コード(60秒・1回限り) |
 
 アカウント連携(`account_links` / `link_requests`)の設計背景は
 [docs/adr/0002-account-linking.md](adr/0002-account-linking.md) を参照。
+エージェント接続とOAuth(`agent_connections` / `oauth_clients` / `oauth_codes`)の設計背景は
+[docs/adr/0004-agent-connections-and-own-oauth-server.md](adr/0004-agent-connections-and-own-oauth-server.md) を参照。
