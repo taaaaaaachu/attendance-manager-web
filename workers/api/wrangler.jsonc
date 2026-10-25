@@ -3,6 +3,9 @@
   "name": "attendance-manager",
   "main": "src/index.ts",
   "compatibility_date": "2026-07-01",
+  // fetch()を常に公開インターネット経由にする。OAuthのCIMD(クライアントが指定したURLの文書)を取りに行くとき、
+  // 同じゾーンや非公開の宛先へ抜けるSSRFを防ぐため(docs/adr/0004)
+  "compatibility_flags": ["global_fetch_strictly_public"],
   "routes": [{ "pattern": "attendance-manager.example.com", "custom_domain": true }],
   // workers.devとPreview URLはCloudflare Accessで保護されないため必ず無効化する
   "workers_dev": false,
