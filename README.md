@@ -11,6 +11,7 @@
 - 勤怠データのJSONエクスポート
 - 複数のメールアドレスを1つのカレンダーに束ねるアカウント連携
 - 管理者向けの全ユーザーの出社率一覧・閲覧・ユーザー削除(`/admin`)
+- AIエージェントからの操作(MCP、`/mcp`。OAuth 2.1と手動発行のBearerトークンに対応)
 - PWA対応(スマートフォンのホーム画面に追加して使える)
 
 用語の定義は [CONTEXT.md](CONTEXT.md)、設計判断は [docs/adr/](docs/adr/) を参照。
@@ -209,8 +210,9 @@ mainへのpushではテスト成功後に本番D1へのマイグレーション�
 - 全ユーザー(`attendance_records` に1件以上記録があるメールアドレス)の出社率統計一覧、
   期間ナビゲーション、指定した出社率を下回るユーザーの抽出ができる。
 - ユーザー行をクリックすると、そのユーザーのカレンダー・統計を閲覧できる(読み取り専用、編集不可)。
-- 指定したユーザーの勤怠・設定・連携関係を完全に削除できる
+- 指定したユーザーの勤怠・設定・連携関係・エージェント接続を完全に削除できる
   ([docs/adr/0003-admin-user-deletion.md](docs/adr/0003-admin-user-deletion.md))。
+- 全ユーザーのエージェント接続を一覧し、取り消せる(後述「エージェント接続(MCP)」参照)。
 - 詳細は [docs/adr/0001-admin-feature.md](docs/adr/0001-admin-feature.md) を参照。
 
 ## アカウント連携(複数メールで1つのカレンダー)
@@ -230,6 +232,60 @@ mainへのpushではテスト成功後に本番D1へのマイグレーション�
   付け替えるリゾルバ」1枚で実現している(`withCalendarOwner`)。構造はフラット・スターに
   限定(連鎖・多重参加は不可)。詳細は
   [docs/adr/0002-account-linking.md](docs/adr/0002-account-linking.md) を参照。
+
+## エージェント接続(MCP)
+
+自律型AIエージェントが MCP(Streamable HTTP、`https://<本番ドメイン>/mcp`)で勤怠を操作できる。
+設計は [docs/adr/0004-agent-connections-and-own-oauth-server.md](docs/adr/0004-agent-connections-and-own-oauth-server.md) を参照。
+
+- **OAuth 2.1に対応したエージェント**: `/mcp` のURLを登録するだけでよい。エージェントが `/mcp` の401から
+  認可サーバーを見つけ、クライアント登録(CIMDかDCR)→ブラウザで同意画面(`/oauth/authorize`、Accessでログイン)→
+  トークン発行まで自動で進む。
+- **OAuthに対応していないエージェント**: 設定画面の「エージェント接続」でトークンを発行し、
+  `Authorization: Bearer <トークン>` として登録する(トークンは発行直後に一度だけ表示される)。
+- できるのは日常の操作(勤怠の閲覧・記録・削除、出社率、設定、会社の休日・出勤日、スケジュールの一括適用)だけ。
+  アカウント連携・管理者機能・全件リセットはできない。操作先は発行したユーザーのカレンダー
+  (アカウント連携中は共有しているカレンダー)。
+- 接続は設定画面の一覧から取り消せる。90日使われなければ自動で失効する。
+- **Accessのポリシーからユーザーを外しても、その人の接続は動き続ける**(`/mcp` はAccessを通らないため)。
+  外した人の接続は、管理画面(`/admin`)の「エージェント接続」で取り消すこと。
+
+### Cloudflare Access の設定(本番で必須・ダッシュボードで行う)
+
+エージェントのサーバーはAccessのログインを通れないため、次のパスだけをAccessの **Bypass** にする。
+**同意画面 `/oauth/authorize` とそれ以外のパス(`/`・`/api/*`・`/admin` など)はBypassしないこと**
+(同意画面はAccessのJWTで「誰が許可したか」を決めている)。
+
+| パス | 用途 |
+|---|---|
+| `/mcp` | MCPエンドポイント(Bearerトークンで認証) |
+| `/oauth/token` | トークン発行・リフレッシュ |
+| `/oauth/register` | クライアント登録(DCR) |
+| `/oauth/revoke` | トークン取り消し |
+| `/.well-known/*` | 認可サーバー・保護リソースのメタデータ |
+
+手順(Zero Trust ダッシュボード):
+
+1. **Access → Applications → Add an application → Self-hosted** を選ぶ。
+2. アプリケーション名を `attendance-manager (agents)` などにし、**Public hostname** に本番ドメインと
+   パス `mcp` を指定する。続けて **Add public hostname** で同じドメインに `oauth/token`・`oauth/register`・
+   `oauth/revoke`・`.well-known/*` を追加する(5件)。
+3. ポリシーを1つ作り、**Action: Bypass**、**Include: Everyone** にする。
+4. 保存する。既存のアプリ(ドメイン全体を保護しているもの)は変更しない。パスを指定したアプリの方が
+   優先されるため、上の5パスだけがAccessの外に出る。
+5. 確認:
+   - `curl -i https://<本番ドメイン>/.well-known/oauth-authorization-server` が200のJSONを返す。
+   - `curl -i -X POST https://<本番ドメイン>/mcp` が401と
+     `WWW-Authenticate: Bearer resource_metadata="..."` を返す(Accessのログイン画面への302ではない)。
+   - ブラウザで `https://<本番ドメイン>/oauth/authorize` を開くとAccessのログインが求められる。
+   - `curl -i https://<本番ドメイン>/api/auth/me` がAccessのログインへの302を返す(Bypassになっていない)。
+
+その他:
+
+- Worker側の設定(`wrangler.jsonc`)はデプロイで反映される: `run_worker_first` へのパス追加、
+  `global_fetch_strictly_public`(CIMD取得のSSRF対策)、DCRの回数制限(`ratelimits`)、期限切れデータの
+  日次掃除(`triggers.crons`)。追加のsecretは不要。
+- テーブルは `0004_agent_connections.sql` で追加される(CIのデプロイでマイグレーションが適用される)。
 
 ## 既知の制約・今後の課題
 
