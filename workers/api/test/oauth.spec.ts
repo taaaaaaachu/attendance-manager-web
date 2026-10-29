@@ -1,5 +1,5 @@
-import { env, fetchMock } from "cloudflare:test";
-import { afterEach, beforeAll, describe, expect, it } from "vitest";
+import { env } from "cloudflare:test";
+import { beforeAll, describe, expect, it } from "vitest";
 import { createOAuthConnection, sha256Hex } from "../src/lib/agentConnections";
 import {
   MAX_UNUSED_CLIENTS,
@@ -19,16 +19,11 @@ import {
   validateRegistration,
   verifyPkce,
 } from "../src/lib/oauth";
+import { mockFetch } from "./helpers/fetchMock";
 import { applyMigrations } from "./helpers/migrations";
 
 beforeAll(async () => {
   await applyMigrations(env.DB);
-  fetchMock.activate();
-  fetchMock.disableNetConnect();
-});
-
-afterEach(() => {
-  fetchMock.assertNoPendingInterceptors();
 });
 
 const VERIFIER = "v".repeat(43);
@@ -82,22 +77,22 @@ describe("fetchClientMetadata", () => {
   const origin = "https://cimd.example";
 
   it("200 の JSON を返す", async () => {
-    fetchMock.get(origin).intercept({ path: "/ok.json" }).reply(200, { client_id: "x" });
+    mockFetch(`${origin}/ok.json`, () => Response.json({ client_id: "x" }));
     expect(await fetchClientMetadata(new URL(`${origin}/ok.json`))).toEqual({ client_id: "x" });
   });
 
   it("リダイレクトは追わない", async () => {
-    fetchMock.get(origin).intercept({ path: "/redirect.json" }).reply(302, "", { headers: { location: "http://169.254.169.254/" } });
+    mockFetch(`${origin}/redirect.json`, () => new Response(null, { status: 302, headers: { location: "http://169.254.169.254/" } }));
     await expect(fetchClientMetadata(new URL(`${origin}/redirect.json`))).rejects.toThrow("HTTP 302");
   });
 
   it("10KB を超える文書は読まない", async () => {
-    fetchMock.get(origin).intercept({ path: "/big.json" }).reply(200, JSON.stringify({ pad: "x".repeat(20 * 1024) }));
+    mockFetch(`${origin}/big.json`, () => new Response(JSON.stringify({ pad: "x".repeat(20 * 1024) })));
     await expect(fetchClientMetadata(new URL(`${origin}/big.json`))).rejects.toThrow("大きすぎます");
   });
 
   it("JSON でなければ失敗", async () => {
-    fetchMock.get(origin).intercept({ path: "/html" }).reply(200, "<html>");
+    mockFetch(`${origin}/html`, () => new Response("<html>"));
     await expect(fetchClientMetadata(new URL(`${origin}/html`))).rejects.toThrow("JSON ではありません");
   });
 });

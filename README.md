@@ -85,7 +85,7 @@ cd packages/shared && pnpm test
 # apps/web のコンポーネントテスト
 cd apps/web && pnpm test
 
-# workers/api の統合テスト(@cloudflare/vitest-pool-workers、実際のWorkersランタイム上で実行)
+# workers/api の統合テスト(@cloudflare/vitest-plugin、実際のWorkersランタイム上で実行)
 # wrangler.jsoncのassets.directoryが実在する必要があるため、先にapps/webをビルドしておく
 cd workers/api && pnpm test
 ```

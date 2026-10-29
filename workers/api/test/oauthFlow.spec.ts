@@ -1,7 +1,8 @@
-import { env, fetchMock, SELF } from "cloudflare:test";
+import { env, SELF } from "cloudflare:test";
 import { beforeAll, describe, expect, it } from "vitest";
 import { authenticateAgent, listAgentConnections } from "../src/lib/agentConnections";
 import { authHeaders, mockAccessCerts } from "./helpers/access";
+import { mockFetch } from "./helpers/fetchMock";
 import { applyMigrations } from "./helpers/migrations";
 
 /** 同意画面からトークン発行・リフレッシュ・取り消しまでを、本物のWorkerに通して確かめる */
@@ -15,11 +16,7 @@ let CHALLENGE: string;
 beforeAll(async () => {
   await applyMigrations(env.DB);
   await mockAccessCerts();
-  fetchMock
-    .get("https://agent.example")
-    .intercept({ path: "/client.json" })
-    .reply(200, { client_id: CLIENT, client_name: "muse", redirect_uris: [REDIRECT] })
-    .persist();
+  mockFetch(CLIENT, () => Response.json({ client_id: CLIENT, client_name: "muse", redirect_uris: [REDIRECT] }));
   const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(VERIFIER)));
   CHALLENGE = btoa(String.fromCharCode(...digest)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 });

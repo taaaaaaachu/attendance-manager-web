@@ -41,7 +41,7 @@ jobs:
       - name: apps/web - build
         run: pnpm --filter @attendance/web build
 
-      # workers/apiのテスト(vitest-pool-workers)はwrangler.jsoncのassets.directoryが
+      # workers/apiのテスト(vitest-plugin)はwrangler.jsoncのassets.directoryが
       # 実在することを前提にするため、apps/webのビルドより後に実行する必要がある
       - name: workers/api - typecheck & test
         run: |

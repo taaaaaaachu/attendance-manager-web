@@ -1,10 +1,11 @@
-import { env, fetchMock } from "cloudflare:test";
+import { env } from "cloudflare:test";
+import { mockFetch } from "./fetchMock";
 
 /**
  * Cloudflare Access認証のテストヘルパー。
  *
  * テスト用RSA鍵ペアを生成し、その公開鍵をAccessのJWKSエンドポイント
- * (https://<team>/cdn-cgi/access/certs)としてfetchMockで配信、秘密鍵で
+ * (https://<team>/cdn-cgi/access/certs)としてmockFetchで配信、秘密鍵で
  * Cf-Access-Jwt-Assertion用のJWTを署名する。これによりミドルウェアの
  * 署名検証を本物のフローと同じ経路でテストできる。
  */
@@ -85,19 +86,13 @@ export async function generateUntrustedKey(): Promise<CryptoKey> {
   return pair.privateKey;
 }
 
-/** AccessのJWKSエンドポイントをfetchMockで配信する。各テストファイルのbeforeAllで呼ぶ */
+/** AccessのJWKSエンドポイントをmockFetchで配信する。各テストファイルのbeforeAllで呼ぶ */
 export async function mockAccessCerts(): Promise<void> {
   const { publicKey } = await getTestKeyPair();
   const jwk = (await crypto.subtle.exportKey("jwk", publicKey)) as JsonWebKey & { kid?: string };
   jwk.kid = TEST_KID;
 
-  fetchMock.activate();
-  fetchMock.disableNetConnect();
-  fetchMock
-    .get(`https://${env.ACCESS_TEAM_DOMAIN}`)
-    .intercept({ path: "/cdn-cgi/access/certs" })
-    .reply(200, { keys: [jwk] })
-    .persist();
+  mockFetch(`https://${env.ACCESS_TEAM_DOMAIN}/cdn-cgi/access/certs`, () => Response.json({ keys: [jwk] }));
 }
 
 /** 指定メールアドレスで認証済みのリクエストヘッダを作る */
