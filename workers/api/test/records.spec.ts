@@ -246,23 +246,99 @@ describe("リセットAPI", () => {
 });
 
 describe("エクスポートAPI", () => {
-  it("範囲指定でレコードをエクスポートできる", async () => {
-    const email = "exportuser1@example.com";
-    await SELF.fetch("http://example.com/api/records/2026-02-16", {
-      method: "PUT",
-      headers: await jsonHeaders(email),
-      body: JSON.stringify({ status: "office" }),
-    });
-    await SELF.fetch("http://example.com/api/records/2026-03-16", {
-      method: "PUT",
-      headers: await jsonHeaders(email),
-      body: JSON.stringify({ status: "remote" }),
-    });
+  interface ExportBody {
+    range: { start: string; end: string } | null;
+    days: { date: string; isHoliday: boolean; record: { status: string; updatedAt: string } | null }[];
+  }
 
-    const res = await SELF.fetch("http://example.com/api/export?start=2026-02-01&end=2026-02-28", {
-      headers: await authHeaders(email),
+  async function putRecord(email: string, date: string, status: string): Promise<void> {
+    await SELF.fetch(`http://example.com/api/records/${date}`, {
+      method: "PUT",
+      headers: await jsonHeaders(email),
+      body: JSON.stringify({ status }),
     });
-    const body = await res.json<{ records: { date: string }[] }>();
-    expect(body.records.map((r) => r.date)).toEqual(["2026-02-16"]);
+  }
+
+  async function fetchExport(email: string, query: string): Promise<Response> {
+    return SELF.fetch(`http://example.com/api/export${query}`, { headers: await authHeaders(email) });
+  }
+
+  it("期間内の全日を休日判定と記録付きで出力する", async () => {
+    const email = "exportuser1@example.com";
+    await env.DB.prepare("INSERT OR IGNORE INTO japan_holidays (date, fetched_at) VALUES ('2026-02-11', '')").run();
+    await SELF.fetch("http://example.com/api/company-holidays", {
+      method: "POST",
+      headers: await jsonHeaders(email),
+      body: JSON.stringify({ date: "2026-02-09" }),
+    });
+    await SELF.fetch("http://example.com/api/company-working-days", {
+      method: "POST",
+      headers: await jsonHeaders(email),
+      body: JSON.stringify({ date: "2026-02-14" }),
+    });
+    await putRecord(email, "2026-02-10", "office");
+    await putRecord(email, "2026-03-16", "remote");
+
+    const res = await fetchExport(email, "?start=2026-02-09&end=2026-02-15");
+    expect(res.status).toBe(200);
+    const body = await res.json<ExportBody>();
+    expect(body.range).toEqual({ start: "2026-02-09", end: "2026-02-15" });
+    expect(body.days.map((d) => [d.date, d.isHoliday])).toEqual([
+      ["2026-02-09", true], // 会社休日
+      ["2026-02-10", false],
+      ["2026-02-11", true], // 祝日
+      ["2026-02-12", false],
+      ["2026-02-13", false],
+      ["2026-02-14", false], // 土曜だが会社出勤日
+      ["2026-02-15", true], // 日曜
+    ]);
+    expect(body.days[1].record).toEqual({ status: "office", updatedAt: expect.any(String) });
+    expect(body.days.filter((d) => d.record).length).toBe(1);
+  });
+
+  it("記録のない期間を指定しても全日をrecord: nullで出力する", async () => {
+    const body = await (await fetchExport("exportuser2@example.com", "?start=2026-04-01&end=2026-04-03")).json<ExportBody>();
+    expect(body.days).toEqual([
+      { date: "2026-04-01", isHoliday: false, record: null },
+      { date: "2026-04-02", isHoliday: false, record: null },
+      { date: "2026-04-03", isHoliday: false, record: null },
+    ]);
+  });
+
+  it("省略した側は記録の最初/最後の日で補う", async () => {
+    const email = "exportuser3@example.com";
+    await putRecord(email, "2026-04-06", "office");
+    await putRecord(email, "2026-04-08", "remote");
+
+    const both = await (await fetchExport(email, "")).json<ExportBody>();
+    expect(both.range).toEqual({ start: "2026-04-06", end: "2026-04-08" });
+    expect(both.days.map((d) => d.date)).toEqual(["2026-04-06", "2026-04-07", "2026-04-08"]);
+
+    const startOnly = await (await fetchExport(email, "?start=2026-04-07")).json<ExportBody>();
+    expect(startOnly.range).toEqual({ start: "2026-04-07", end: "2026-04-08" });
+  });
+
+  it("補った側が指定側を越えるときは指定側の日で止める", async () => {
+    const email = "exportuser4@example.com";
+    await putRecord(email, "2026-04-06", "office");
+
+    const startOnly = await (await fetchExport(email, "?start=2026-05-01")).json<ExportBody>();
+    expect(startOnly.range).toEqual({ start: "2026-05-01", end: "2026-05-01" });
+    expect(startOnly.days).toEqual([{ date: "2026-05-01", isHoliday: false, record: null }]);
+
+    const endOnly = await (await fetchExport("exportuser5@example.com", "?end=2026-05-01")).json<ExportBody>();
+    expect(endOnly.range).toEqual({ start: "2026-05-01", end: "2026-05-01" });
+  });
+
+  it("両方省略で記録が0件ならrange: null、days: []", async () => {
+    const body = await (await fetchExport("exportuser6@example.com", "")).json<ExportBody>();
+    expect(body).toEqual({ range: null, days: [] });
+  });
+
+  it("不正な日付やstart > endは400", async () => {
+    const email = "exportuser7@example.com";
+    expect((await fetchExport(email, "?start=2026-02-30&end=2026-03-01")).status).toBe(400);
+    expect((await fetchExport(email, "?start=2026/02/01")).status).toBe(400);
+    expect((await fetchExport(email, "?start=2026-03-02&end=2026-03-01")).status).toBe(400);
   });
 });

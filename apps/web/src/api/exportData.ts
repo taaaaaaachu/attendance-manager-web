@@ -1,9 +1,15 @@
 import type { AttendanceRecord } from "@attendance/shared";
 import { apiFetch } from "./client";
 
+export interface ExportDay {
+  date: string;
+  isHoliday: boolean;
+  record: Pick<AttendanceRecord, "status" | "updatedAt"> | null;
+}
+
 export interface ExportResult {
-  range: { start: string | null; end: string | null };
-  records: AttendanceRecord[];
+  range: { start: string; end: string } | null;
+  days: ExportDay[];
 }
 
 export function exportRecords(range?: { start?: string; end?: string }): Promise<ExportResult> {
