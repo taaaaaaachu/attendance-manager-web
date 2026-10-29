@@ -35,7 +35,7 @@ attendance-manager-web/
 
 ## 前提条件
 
-[mise](https://mise.jdx.dev/) でNode.js/pnpmを管理する。
+[mise](https://mise.jdx.dev/) でNode.js/pnpmを管理する(版は `mise.toml`)。Node 25以降はcorepackが同梱されないため、pnpmもmiseで入れる。pnpmの版はルートの `package.json` の `packageManager` と揃えること(CIは `packageManager` を読む)。
 
 ```bash
 mise install
