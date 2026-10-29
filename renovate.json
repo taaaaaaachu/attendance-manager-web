@@ -3,5 +3,6 @@
   "extends": ["config:recommended"],
   "dependencyDashboardTitle": "依存パッケージ・Node.jsの更新状況",
   "dependencyDashboardApproval": true,
+  "minimumReleaseAge": "1 day",
   "dependencyDashboardHeader": "新しい版が出ているものの一覧です(Renovateが自動更新)。PRは作りません。PRが欲しいものはチェックを入れてください。"
 }
