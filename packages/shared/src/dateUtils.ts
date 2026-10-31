@@ -182,7 +182,6 @@ export function getMandatoryOfficeDays(
   const endYear = end.getFullYear();
   const endMonth = end.getMonth() + 1;
 
-  // eslint-disable-next-line no-constant-condition
   while (true) {
     for (const day of rules) {
       if (day >= 1 && day <= daysInMonth(year, month)) {

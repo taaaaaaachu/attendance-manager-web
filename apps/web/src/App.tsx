@@ -58,37 +58,34 @@ export default function App() {
       .finally(() => setAuthLoading(false));
   }, []);
 
-  const loadPeriodData = useCallback(async () => {
-    try {
-      const [periodData, recordList, statsData] = await Promise.all([
-        getPeriod(offsetMonths),
-        getRecords(),
-        getStats(offsetMonths),
-      ]);
-      setPeriod(periodData);
-      setRecords(new Map(recordList.map((r) => [r.date, r])));
-      setStats(statsData);
-    } catch (err) {
-      setAlertMessage(err instanceof ApiError ? err.message : "データの読み込みに失敗しました");
-    }
-  }, [offsetMonths]);
+  const loadPeriodData = useCallback(
+    () =>
+      Promise.all([getPeriod(offsetMonths), getRecords(), getStats(offsetMonths)])
+        .then(([periodData, recordList, statsData]) => {
+          setPeriod(periodData);
+          setRecords(new Map(recordList.map((r) => [r.date, r])));
+          setStats(statsData);
+        })
+        .catch((err) => {
+          setAlertMessage(err instanceof ApiError ? err.message : "データの読み込みに失敗しました");
+        }),
+    [offsetMonths],
+  );
 
-  const loadSettingsAndDays = useCallback(async () => {
-    try {
-      const [settingsData, holidayList, companyHolidayList, companyWorkingDayList] = await Promise.all([
-        getSettings(),
-        getHolidays(),
-        getCompanyHolidays(),
-        getCompanyWorkingDays(),
-      ]);
-      setSettings(settingsData);
-      setHolidays(new Set(holidayList));
-      setCompanyHolidays(companyHolidayList);
-      setCompanyWorkingDays(companyWorkingDayList);
-    } catch (err) {
-      setAlertMessage(err instanceof ApiError ? err.message : "設定の読み込みに失敗しました");
-    }
-  }, []);
+  const loadSettingsAndDays = useCallback(
+    () =>
+      Promise.all([getSettings(), getHolidays(), getCompanyHolidays(), getCompanyWorkingDays()])
+        .then(([settingsData, holidayList, companyHolidayList, companyWorkingDayList]) => {
+          setSettings(settingsData);
+          setHolidays(new Set(holidayList));
+          setCompanyHolidays(companyHolidayList);
+          setCompanyWorkingDays(companyWorkingDayList);
+        })
+        .catch((err) => {
+          setAlertMessage(err instanceof ApiError ? err.message : "設定の読み込みに失敗しました");
+        }),
+    [],
+  );
 
   useEffect(() => {
     if (!user) return;

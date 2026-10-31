@@ -23,9 +23,7 @@ export function AgentConnectionSection() {
   const [busy, setBusy] = useState(false);
   const [pendingRevoke, setPendingRevoke] = useState<AgentConnection | null>(null);
 
-  const reload = useCallback(async () => {
-    setConnections(await listAgentConnections());
-  }, []);
+  const reload = useCallback(() => listAgentConnections().then((list) => setConnections(list)), []);
 
   useEffect(() => {
     reload().catch((e) => setError(e instanceof ApiError ? e.message : "接続の一覧の取得に失敗しました"));
