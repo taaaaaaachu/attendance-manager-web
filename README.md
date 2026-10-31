@@ -92,6 +92,8 @@ cd workers/api && pnpm test
 
 各パッケージで `pnpm typecheck` を実行すると型チェックができる。
 
+リポジトリ直下で `pnpm lint` を実行すると、全パッケージのlint(ESLint)ができる。
+
 ## デプロイ(初回)
 
 このプロジェクトは **Cloudflare Free プラン(完全無料)で運用できる**ことを前提に設計している
