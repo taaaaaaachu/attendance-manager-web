@@ -20,13 +20,15 @@ export function AdminAgentConnectionTable({ refreshKey }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [pendingRevoke, setPendingRevoke] = useState<AgentConnection | null>(null);
 
-  const reload = useCallback(async () => {
-    try {
-      setConnections(await getAdminAgentConnections());
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : "エージェント接続の読み込みに失敗しました");
-    }
-  }, []);
+  const reload = useCallback(
+    () =>
+      getAdminAgentConnections()
+        .then((list) => setConnections(list))
+        .catch((e) => {
+          setError(e instanceof ApiError ? e.message : "エージェント接続の読み込みに失敗しました");
+        }),
+    [],
+  );
 
   useEffect(() => {
     reload();

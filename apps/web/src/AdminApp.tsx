@@ -40,13 +40,15 @@ export default function AdminApp() {
       .finally(() => setAuthLoading(false));
   }, []);
 
-  const loadUsers = useCallback(async () => {
-    try {
-      setUsers(await getAdminUsers(offsetMonths));
-    } catch (err) {
-      setAlertMessage(err instanceof ApiError ? err.message : "一覧の読み込みに失敗しました");
-    }
-  }, [offsetMonths]);
+  const loadUsers = useCallback(
+    () =>
+      getAdminUsers(offsetMonths)
+        .then((list) => setUsers(list))
+        .catch((err) => {
+          setAlertMessage(err instanceof ApiError ? err.message : "一覧の読み込みに失敗しました");
+        }),
+    [offsetMonths],
+  );
 
   useEffect(() => {
     if (!user?.isAdmin) return;
@@ -63,17 +65,15 @@ export default function AdminApp() {
   }, [user, loadUsers]);
 
   useEffect(() => {
-    if (!selectedUserId) {
-      setDetail(null);
-      return;
-    }
-    setDetail(null);
+    if (!selectedUserId) return;
     getAdminUserDetail(selectedUserId, offsetMonths)
       .then((d) => setDetail(d))
       .catch((err) => {
         setAlertMessage(err instanceof ApiError ? err.message : "ユーザー詳細の読み込みに失敗しました");
         setSelectedUserId(null);
       });
+    // 選択や期間が変わったら、次の詳細が届くまで前の内容を出さない
+    return () => setDetail(null);
   }, [selectedUserId, offsetMonths]);
 
   const applyThreshold = () => {

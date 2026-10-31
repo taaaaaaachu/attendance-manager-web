@@ -28,9 +28,7 @@ export function AccountLinkSection({ onChanged }: Props) {
   const [busy, setBusy] = useState(false);
   const [pendingAccept, setPendingAccept] = useState<string | null>(null);
 
-  const reload = useCallback(async () => {
-    setState(await getLinkState());
-  }, []);
+  const reload = useCallback(() => getLinkState().then((s) => setState(s)), []);
 
   useEffect(() => {
     reload().catch((e) => setError(e instanceof ApiError ? e.message : "連携状態の取得に失敗しました"));
