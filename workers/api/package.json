@@ -14,14 +14,14 @@
   "dependencies": {
     "@attendance/shared": "workspace:*",
     "@modelcontextprotocol/server": "^2.4.0",
-    "hono": "^4.13.14",
+    "hono": "^4.13.16",
     "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@cloudflare/vitest-plugin": "^1.4.11",
+    "@cloudflare/vitest-plugin": "^1.5.1",
     "@modelcontextprotocol/client": "^2.4.0",
     "typescript": "~6.0.3",
-    "vitest": "^5.0.5",
-    "wrangler": "^4.156.0"
+    "vitest": "^5.1.0",
+    "wrangler": "^4.157.0"
   }
 }
