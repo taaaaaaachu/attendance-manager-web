@@ -1,5 +1,5 @@
 import type { AttendanceStats, Period, UserSettings } from "@attendance/shared";
-import { calculateStats, formatDate, getPeriodForMonthOffset } from "@attendance/shared";
+import { calculateStats, getPeriodForMonthOffset } from "@attendance/shared";
 import {
   getAllRecords,
   getCompanyHolidays,
@@ -17,6 +17,12 @@ export interface PeriodContext {
   period: Period;
 }
 
+/** 日本時間の今日(yyyy-MM-dd)。Workersの時計はUTCなので、そのまま日付にすると朝9時前は前日になる */
+export function todayInJapan(now: Date = new Date()): string {
+  // sv-SEロケールはyyyy-MM-dd形式で出力される
+  return now.toLocaleDateString("sv-SE", { timeZone: "Asia/Tokyo" });
+}
+
 /** 指定ユーザーの設定に基づく期間(offsetMonthsだけ前後にずらした期間)を組み立てる */
 export async function loadPeriodContext(
   db: D1Database,
@@ -29,7 +35,7 @@ export async function loadPeriodContext(
     getCompanyWorkingDays(db, userId),
     getJapanHolidays(db),
   ]);
-  const today = formatDate(new Date());
+  const today = todayInJapan();
   const period = getPeriodForMonthOffset(
     today,
     offsetMonths,
